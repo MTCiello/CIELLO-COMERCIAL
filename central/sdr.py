@@ -9,7 +9,7 @@ Fluxo:
   6. hoje        lista os follow-ups do dia (cadência D+2, D+5, D+10) com o link pronto
   +  entrada     lead que chegou sozinho (DM, anúncio, site, indicação): registra e devolve a resposta em segundos
   7. crm         exporta a planilha para importar no CRM
-  +  instalar-scraper  baixa o executável do gosom para o seu sistema em comercial/bin/ (o instalar.cmd já faz)
+  +  instalar-scraper  baixa o executável do gosom para o seu sistema em comercial/bin/ (o instalador já faz)
 
 Tudo também funciona pela janela Comercial do Ciello OS, sem o Claude (a busca no Maps roda pelo botão).
 
@@ -113,7 +113,7 @@ def cmd_buscar(a):
     if not (bruto / "consultas.txt").exists():
         sys.exit("Rode antes: python central/sdr.py consultas")
     opcoes = ["-depth", str(a.profundidade), "-lang", "pt", "-exit-on-inactivity", "3m"]
-    # 1º o executável do gosom (sem Docker), em comercial/bin/: o instalar.cmd baixa (sdr.py instalar-scraper)
+    # 1º o executável do gosom (sem Docker), em comercial/bin/: o instalador baixa (sdr.py instalar-scraper)
     binario = a.binario or next((str(p) for p in sorted((PASTA / "bin").glob("google*maps*scraper*")) if p.is_file()), None)
     if binario:
         cmd = [binario, "-input", str(bruto / "consultas.txt"), "-results", str(bruto / "resultados.csv"), *opcoes]

@@ -6,7 +6,7 @@ O escritório é servido pelo mesmo endereço do Ciello OS (/escritorio/): clica
 agente. Cada sessão do Claude Code aberta na pasta do assistente vira um personagem; com os hooks (o escritório
 pergunta na primeira vez), os movimentos são instantâneos.
 
-  python central/escritorio/servidor.py              # ou clique duas vezes em Ciello.cmd
+  python central/escritorio/servidor.py              # ou o ícone Ciello OS (instalador/lancador.pyw)
   python central/escritorio/servidor.py --sem-escritorio --sem-navegador
 
 Abre em http://127.0.0.1:3200 numa janela de app do Edge/Chrome (sem barra de endereço), como um programa instalado.
@@ -114,6 +114,8 @@ ACOES = {
     "perfis_atualizar": ("Atualizar os perfis pelo Metricool", "analista", ["central/perfis.py", "--pelo-claude"]),
     "atualizacao_verificar": ("Procurar atualizações do Ciello OS", "sistema", ["instalador/atualizacao.py", "verificar"]),
     "atualizacao_aplicar": ("Atualizar o Ciello OS", "sistema", ["instalador/atualizacao.py", "aplicar"]),
+    "rotinas_ligar": ("Ligar as rotinas automáticas (Bom dia e piloto)", "sistema", ["instalador/rotinas.pyw", "ligar"]),
+    "rotinas_desligar": ("Desligar as rotinas automáticas", "sistema", ["instalador/rotinas.pyw", "desligar"]),
     "voz_instalar": ("Instalar a voz (Kokoro e Chatterbox, uns 3 GB)", "produtor-video", ["-m", "pip", "install", "-r", "central/requirements-voz.txt"]),
 }
 execucoes = {}
@@ -801,6 +803,9 @@ class Painel(BaseHTTPRequestHandler):
             t = terminais.abrir(prompt, str(pedido.get("titulo") or "")[:80], persistencia.preferencia("bypassPermissions"),
                                 pedido.get("modelo"))
             return self._json({"id": t.id})
+        if self.path == "/api/desligar":
+            threading.Thread(target=desligar, daemon=True).start()
+            return self._json({"ok": True})
         if self.path == "/api/terminal/fechar":
             terminais.fechar(pedido.get("id"))
             return self._json({"ok": True})
@@ -836,6 +841,16 @@ class Painel(BaseHTTPRequestHandler):
         self._enviar(b"ok", "text/plain; charset=utf-8")
 
 
+SERVIDOR = [None]
+
+
+def desligar():
+    """Botão Desligar do menu Iniciar: o servidor roda sem janela, então é por aqui que ele fecha."""
+    time.sleep(0.3)  # a resposta chega à página antes
+    if SERVIDOR[0]:
+        SERVIDOR[0].shutdown()
+
+
 def abrir_como_app(url):
     """Edge ou Chrome em modo app (janela própria, sem abas nem barra de endereço); senão, o navegador padrão."""
     candidatos = [shutil.which(n) for n in ("msedge", "chrome", "google-chrome", "chromium")]
@@ -860,7 +875,7 @@ def main():
     global sala
     PORTA_ATUAL[0] = a.porta
     dados_iniciais.preparar()  # primeira abertura: a empresa fictícia de exemplo (ou nada, se já tem dados seus)
-    srv = ThreadingHTTPServer(("127.0.0.1", a.porta), Painel)
+    srv = SERVIDOR[0] = ThreadingHTTPServer(("127.0.0.1", a.porta), Painel)
     url = f"http://127.0.0.1:{a.porta}"
     print("Ciello OS em", url, "(Ctrl+C para sair)")
     if not a.sem_escritorio:
@@ -872,6 +887,8 @@ def main():
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
+    terminais.fechar_todos()
+    os._exit(0)  # o escritório e os terminais têm threads próprias: desligar é desligar tudo
 
 
 if __name__ == "__main__":
