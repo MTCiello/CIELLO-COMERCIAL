@@ -33,6 +33,21 @@ PALETAS = 6
 MATIZES = (0, 110, 220)  # sétimo agente em diante: mesmo personagem, outra cor
 
 
+def problema_no_cabecalho(cab: str) -> str:
+    """O Claude Code lê o cabeçalho como YAML e ignora o agente inteiro se ele não for válido (sem avisar).
+    O erro mais comum: valor sem aspas com ": " no meio (description: Faz X: Y). Devolve o problema ou ""."""
+    for linha in cab.strip().splitlines():
+        m = re.match(r"^([A-Za-z][\w-]*):\s*(.*)$", linha)
+        if not m:
+            return f"linha fora do formato chave: valor ({linha[:40]})"
+        valor = m.group(2).strip()
+        if valor[:1] in "'\"":
+            continue
+        if ": " in valor or valor.endswith(":") or " #" in valor or valor[:1] in "[{&*!|>%@`":
+            return f"{m.group(1)} precisa de aspas (tem ': ' ou caractere especial)"
+    return ""
+
+
 def equipe(raiz: Path) -> list[str]:
     """Nomes dos agentes definidos em .claude/agents/*.md (campo name do cabeçalho)."""
     nomes = []

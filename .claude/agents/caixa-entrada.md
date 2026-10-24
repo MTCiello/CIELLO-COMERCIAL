@@ -1,6 +1,6 @@
 ---
 name: caixa-entrada
-description: Organiza o e-mail e a agenda do usuário: triagem (urgente, responder, só saber), rascunhos de resposta na voz dele, horários para demo e o resumo da manhã. Use proactively no /bom-dia e quando falarem em e-mail, agenda, reunião ou demo.
+description: 'Organiza o e-mail e a agenda do usuário: triagem (urgente, responder, só saber), rascunhos de resposta na voz dele, horários para demo e o resumo da manhã. Use proactively no /bom-dia e quando falarem em e-mail, agenda, reunião ou demo.'
 color: blue
 model: sonnet
 effort: low

@@ -8,7 +8,8 @@ Na primeira vez, se existir o layout do pixel-agents original (~/.pixel-agents/l
 senão entra o layout padrão (central/escritorio/layout-padrao.json). O seu layout entra pelo editor do escritório
 (Layout → Importar) ou pela janela Boas-vindas (Importar meus dados: escritorio/layout.json no .zip).
 Quando o layout padrão muda (campo cielloLayout), quem ainda usa um padrão anterior (mesmo mexido no editor) recebe o
-novo, com cópia do antigo em layout-antigo-v<N>.json. Um layout importado sem esse campo nunca é trocado.
+novo, com cópia do antigo em layout-antigo-v<N>.json. Um layout importado (sem esse campo, ou marcado com
+cielloImportado pela janela Boas-vindas) nunca é trocado.
 """
 import json
 import os
@@ -109,7 +110,10 @@ def versao_padrao(layout) -> int:
 
 
 def _padrao_antigo(layout) -> bool:
-    """O layout é um padrão que já veio com o app? Os numerados (cielloLayout) e o de 4 salas, que não tinha número."""
+    """O layout é um padrão que já veio com o app? Os numerados (cielloLayout) e o de 4 salas, que não tinha número.
+    O que você importou (cielloImportado) é seu, mesmo que tenha nascido de um padrão antigo."""
+    if layout.get("cielloImportado"):
+        return False
     if versao_padrao(layout):
         return True
     rotulos = {a.get("label") for a in layout.get("areas") or [] if isinstance(a, dict)}
@@ -146,7 +150,10 @@ def atualizar_layout(antigo, novo):
 
 def gravar_layout(layout):
     """O editor de layout salva sem o campo cielloLayout: mantém a versão, senão o padrão seria trocado de novo."""
-    v = versao_padrao(_ler(CASA / "layout.json", None))
+    atual = _ler(CASA / "layout.json", None)
+    v = versao_padrao(atual)
     if v and isinstance(layout, dict) and not layout.get("cielloLayout"):
         layout = {**layout, "cielloLayout": v}
+    if isinstance(atual, dict) and atual.get("cielloImportado") and isinstance(layout, dict):
+        layout = {**layout, "cielloImportado": True}
     _gravar(CASA / "layout.json", layout)

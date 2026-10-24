@@ -29,6 +29,7 @@ const SVG = {
   balao: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
   video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
   caixa: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  biblioteca: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M16 4v5"/><path d="M10 12.5v5l4-2.5z"/>',
   microfone: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>',
   reticencias: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   min: '<path d="M2 6h8"/>', max: '<rect x="2" y="2" width="8" height="8"/>', rest: '<rect x="2" y="4" width="6" height="6"/><path d="M4 4V2h6v6H8"/>', fechar: '<path d="M2 2l8 8M10 2l-8 8"/>',
@@ -54,13 +55,14 @@ const APPS = {
   atividade: { titulo: 'Atividade', icone: 'atividade', cor: 'linear-gradient(135deg,#7E8AA1,#4B566B)', ux: 'compacta', w: 520, h: 580, render: renderAtividade, cada: 3000 },
   verificar: { titulo: 'Verificação', icone: 'verificar', cor: 'linear-gradient(135deg,#5BC0A0,#2D8C70)', acao: 'verificar' },
   dados: { titulo: 'Boas-vindas e seus dados', icone: 'caixa', cor: 'linear-gradient(135deg,#C9A36A,#8A6A3B)', ux: 'leitura', w: 760, h: 680, render: renderDados },
+  biblioteca: { titulo: 'Biblioteca', icone: 'biblioteca', cor: 'linear-gradient(135deg,#5AA9E6,#2D5F99)', ux: 'painel', w: 1080, h: 740, render: renderBiblioteca, estatico: true },
   atualizacoes: { titulo: 'Atualizações', icone: 'atualizar', cor: 'linear-gradient(135deg,#3A5582,#263A59)', ux: 'compacta', w: 620, h: 520, render: renderAtualizacoes },
 };
 // menu Iniciar por objetivo: o que você quer fazer agora
-const GRUPOS = [['Criar', ['redes', 'video', 'conteudo', 'voz', 'tendencias', 'concorrentes']], ['Vender', ['comercial', 'atendimento', 'anuncios']],
+const GRUPOS = [['Criar', ['biblioteca', 'redes', 'video', 'conteudo', 'voz', 'tendencias', 'concorrentes']], ['Vender', ['comercial', 'atendimento', 'anuncios']],
   ['Gerir', ['briefing', 'financeiro', 'objetivos']], ['Sistema', ['dados', 'conexoes', 'equipe', 'atividade', 'verificar', 'atualizacoes']]];
 // no dock, como no Mac: os apps do dia a dia ficam sempre lá; os outros aparecem enquanto estão abertos
-const NO_DOCK = ['briefing', 'financeiro', 'comercial', 'atendimento', 'conteudo', 'video', 'voz', 'tendencias'];
+const NO_DOCK = ['briefing', 'financeiro', 'comercial', 'atendimento', 'conteudo', 'video', 'voz', 'biblioteca', 'tendencias'];
 
 const NOMES = { gerente: 'Gerente', 'pesquisador-mercado': 'Pesquisador de Mercado', roteirista: 'Roteirista', 'produtor-video': 'Produtor de Vídeo',
   'produtor-imagem': 'Produtor de Imagem', postagem: 'Postagem', analista: 'Analista', 'gestor-anuncios': 'Gestor de Anúncios', sdr: 'SDR', closer: 'Closer',
@@ -648,7 +650,7 @@ async function copiar(texto) {
 
 /* Diálogo dentro da janela. campos: [{ nome, rotulo, tipo: texto|numero|data|mes|escolha|area|sim|arquivo|marcar, opcoes, valor, dica, obrigatorio, meia }]
    enviar(dados) devolve { ok, saida }; o resultado aparece no próprio diálogo (com os links clicáveis). */
-function dialogo(j, { titulo, texto = '', campos = [], botao = 'Salvar', enviar, extra = '' }) {
+function dialogo(j, { titulo, texto = '', campos = [], botao = 'Salvar', enviar, extra = '', depois = null }) {
   $('.dialogo', j.el)?.remove();
   const el = document.createElement('div'); el.className = 'dialogo';
   const campo = (c) => {
@@ -686,8 +688,8 @@ function dialogo(j, { titulo, texto = '', campos = [], botao = 'Salvar', enviar,
     const r = await enviar(dados, form);
     b.disabled = false; b.textContent = botao;
     res.hidden = false; res.className = `resultado ${r.ok ? 'ok' : 'erro'}`;
-    res.innerHTML = `<pre>${linkar(r.saida || (r.ok ? 'Pronto.' : 'Não deu certo.'))}</pre>`;
-    if (r.ok) { $('.cancelar', el).textContent = 'Fechar'; b.style.display = 'none'; }
+    res.innerHTML = r.html || `<pre>${linkar(r.saida || (r.ok ? 'Pronto.' : 'Não deu certo.'))}</pre>`;
+    if (r.ok) { $('.cancelar', el).textContent = 'Fechar'; b.style.display = 'none'; depois?.(r, el); }
   };
   setTimeout(() => form.querySelector('input:not([type=checkbox]),select,textarea')?.focus(), 30);
   return el;
@@ -1503,7 +1505,33 @@ async function renderVideo(j) {
         { nome: 'gancho', rotulo: 'Gancho (a 1ª frase, até 9 palavras)', obrigatorio: true, exemplo: 'Três comandos do ChatGPT que respondem cliente por você' },
         { nome: 'itens', rotulo: 'Itens (um por linha, 2 a 4)', tipo: 'area', obrigatorio: true, exemplo: 'Primeiro: responda como atendente da minha loja…\nSegundo: transforme a conversa em orçamento…' },
         { nome: 'cta', rotulo: 'Chamada final', valor: 'Salva pra testar depois e me chama no direct.' }],
-      botao: 'Criar roteiro', enviar: async (x) => { const r = await operar('video_roteiro', x); if (r.ok) desenhar(j, true); return r; } }),
+      botao: 'Criar roteiro',
+      enviar: async (x) => {
+        const r = await operar('video_roteiro', x);
+        if (!r.ok) return r;
+        desenhar(j, true);
+        return { ...r, html: `<p><b>Roteiro criado.</b> Ele já está na lista do Estúdio e na Biblioteca.</p><ol class="cenas-novo">${(r.cenas || []).map((c) => `<li>${esc(c)}</li>`).join('')}</ol>` };
+      },
+      depois: (r, el) => {
+        const pe = $('footer', el);
+        const bt = (rotulo, pri, acao) => { const b = document.createElement('button'); b.type = 'button'; b.className = `bt${pri ? ' pri' : ''}`; b.textContent = rotulo; b.onclick = () => { el.remove(); acao(); }; pe.appendChild(b); };
+        bt('Melhorar com o roteirista', false, () => j.fns.roteirista({ post: r.post }));
+        bt('Gerar o vídeo', true, () => j.fns.gerar({ post: r.post }));
+      } }),
+    roteirista: async ({ post } = {}) => {
+      const pedir = async (x) => {
+        const r = await operar('video_roteirista', { ...x, post: post || '' });
+        if (!r.ok) return r;
+        abrirTerminal({ prompt: r.prompt, titulo: 'Roteirista' });
+        return { ok: true, saida: 'O roteirista começou no terminal. Ele mostra o roteiro para você revisar antes de qualquer vídeo.' };
+      };
+      if (post) { const r = await pedir({}); if (!r.ok) aviso({ titulo: 'Não deu', texto: r.saida, cor: '#C8442F' }); return; }
+      dialogo(j, { titulo: 'Roteiro com o roteirista', texto: 'O agente roteirista escreve o roteiro no Claude Code e mostra para você revisar. Nada é narrado, gerado ou publicado sem você.',
+        campos: [{ nome: 'data', rotulo: 'Data do post', tipo: 'escolha', opcoes: d.proximos.map((x) => [x, `${ddmm(x)} (próximo horário livre)`]), meia: true },
+          { nome: 'pilar', rotulo: 'Pilar', tipo: 'escolha', opcoes: [['comandos', 'Comandos'], ['lancamentos', 'Lançamentos'], ['repositorios', 'Repositórios'], ['economizar', 'Economizar'], ['negocio', 'Negócio / CRM']], meia: true },
+          { nome: 'tema', rotulo: 'Tema do vídeo', tipo: 'area', obrigatorio: true, exemplo: 'Como responder cliente no WhatsApp em 1 minuto com IA' }],
+        botao: 'Pedir ao roteirista', enviar: pedir });
+    },
     gerar: async ({ post, rascunho }) => {
       silenciar('produtor-video', true);
       const r = await operar('video_gerar', { post, modelo: j.modelo, rascunho: rascunho === '1' });
@@ -1575,7 +1603,7 @@ async function renderVideo(j) {
   };
   j.corpo.innerHTML = `<div class="pagina">${secoes}<h1>Estúdio de Vídeo</h1><p class="sub">Roteiro → narração com a voz do Estúdio de Voz (agora: <b>${esc(d.voz)}</b>) → vídeo com a marca da empresa, legenda e trilha. Feito no seu PC com o HyperFrames.</p>${SEM_CLAUDE}
     ${d.hyperframes ? '' : '<div class="faixa"><span>O motor de vídeo (HyperFrames) ainda não está instalado. Rode o <b>instalar.cmd</b> de novo: ele instala em reels/.</span></div>'}
-    <div class="acoes topo"><button class="bt pri" data-fn="novo">+ Novo roteiro</button><button class="bt" data-fn="aba" data-aba="estilos">Galeria de estilos</button><button class="bt" data-abrir="voz">Estúdio de Voz</button><button class="bt" data-abrir="objetivos" title="Os agentes escrevem os roteiros">Pedir roteiros à equipe</button></div>
+    <div class="acoes topo"><button class="bt pri" data-fn="novo">+ Novo roteiro</button><button class="bt" data-fn="roteirista" title="O agente roteirista escreve a partir de um tema">Roteiro com o roteirista</button><button class="bt" data-fn="aba" data-aba="estilos">Galeria de estilos</button><button class="bt" data-abrir="voz">Estúdio de Voz</button><button class="bt" data-abrir="objetivos" title="Os agentes escrevem os roteiros">Pedir roteiros à equipe</button></div>
     <h2>Modelo rápido</h2><div class="modelos">${Object.entries(m).map(([k, x]) => `<button class="modelo ${j.modelo === k ? 'on' : ''}" data-fn="modelo" data-m="${k}"><span class="amostra" style="background:${x.fundo}"><i style="color:${x.texto}">Título</i><i style="color:${x.ouro}">em destaque</i></span><b>${esc(x.nome)}</b><small>${esc(x.descricao)}</small></button>`).join('')}
       <button class="modelo" data-fn="aba" data-aba="estilos"><span class="amostra mosaico">${E.opus98.filter((x) => x.imagem).slice(0, 4).map((x) => `<img src="${esc(x.imagem)}" alt="" loading="lazy">`).join('')}</span><b>Mais ${E.opus98.length + E.biblioteca.length} estilos</b><small>Opus 98 e a biblioteca: o Claude produz o vídeo no estilo que você escolher</small></button></div>
     <h2>Roteiros</h2><div class="quadro-posts">${d.posts.map(cartao).join('') || '<div class="vazio">Nenhum roteiro. Clique em <b>+ Novo roteiro</b>.</div>'}</div></div>`;
@@ -1702,6 +1730,15 @@ async function acompanhar(id, aoTerminar) {
   }
   return null;
 }
+// o microfone escolhido fica guardado neste navegador (o Windows pode ter vários: headset, webcam, "Mixagem estéreo"...)
+const lerMic = () => { try { return localStorage.getItem('ciello-mic') || ''; } catch { return ''; } };
+const gravarMic = (id) => { try { localStorage.setItem('ciello-mic', id); } catch { /* sem armazenamento */ } };
+async function preencherMics(j) {
+  const sel = $('[name=mic]', j.corpo); if (!sel || !navigator.mediaDevices?.enumerateDevices) return;
+  const mics = (await navigator.mediaDevices.enumerateDevices()).filter((x) => x.kind === 'audioinput' && x.deviceId !== 'default' && x.deviceId !== 'communications');
+  const atual = lerMic();
+  sel.innerHTML = '<option value="">o padrão do Windows</option>' + mics.map((x, i) => `<option value="${esc(x.deviceId)}" ${x.deviceId === atual ? 'selected' : ''}>${esc(x.label || `Microfone ${i + 1}`)}</option>`).join('');
+}
 async function renderVoz(j) {
   const d = await api('/api/app/voz'); const p = d.preferencia; const m = d.motores;
   j.teste = j.teste || { motor: p.motor === 'teste' ? 'kokoro' : p.motor, voz: p.voz, perfil: p.perfil, texto: d.texto_padrao };
@@ -1711,22 +1748,40 @@ async function renderVoz(j) {
   j.fns = {
     gravar: async (_, el) => {
       if (j.gravador) { j.gravador.stop(); return; }
-      let fluxo; try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true } }); }
-      catch { aviso({ titulo: 'Microfone bloqueado', texto: 'Permita o microfone para o Ciello OS (ícone de cadeado na barra do navegador).', cor: '#C8442F' }); return; }
+      const micId = lerMic();
+      let fluxo; try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: micId ? { exact: micId } : undefined, echoCancellation: false, noiseSuppression: true } }); }
+      catch (e) {
+        const semMic = e && (e.name === 'NotFoundError' || e.name === 'OverconstrainedError');
+        if (semMic && micId) gravarMic('');
+        aviso({ titulo: semMic ? 'Microfone não encontrado' : 'Microfone bloqueado', texto: semMic ? 'Escolha outro microfone na lista e grave de novo.' : 'Permita o microfone para o Ciello OS (ícone de cadeado na barra do navegador).', cor: '#C8442F' }); desenhar(j, true); return;
+      }
+      preencherMics(j);
+      // medidor de nível: mostra se o microfone escolhido está captando antes de você gastar 20 s lendo
+      const ctx = new AudioContext(); const an = ctx.createAnalyser(); an.fftSize = 1024; ctx.createMediaStreamSource(fluxo).connect(an);
+      const amostra = new Float32Array(an.fftSize); let pico = 0;
       const partes = []; const g = new MediaRecorder(fluxo); j.gravador = g; const inicio = Date.now();
-      g.ondataavailable = (e) => partes.push(e.data);
+      g.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
       el.innerHTML = '■ Parar'; el.classList.add('gravando');
-      const relogioGravacao = setInterval(() => { $('.tempo-gravacao', j.corpo).textContent = `${Math.round((Date.now() - inicio) / 1000)} s`; }, 250);
+      const medidor = $('.nivel-mic i', j.corpo);
+      const relogioGravacao = setInterval(() => {
+        an.getFloatTimeDomainData(amostra); let n = 0; for (const v of amostra) n = Math.max(n, Math.abs(v)); pico = Math.max(pico, n);
+        if (medidor) medidor.style.width = `${Math.min(100, Math.round(n * 140))}%`;
+        $('.tempo-gravacao', j.corpo).textContent = `${Math.round((Date.now() - inicio) / 1000)} s`;
+      }, 100);
       g.onstop = async () => {
-        clearInterval(relogioGravacao); fluxo.getTracks().forEach((x) => x.stop()); j.gravador = null;
+        clearInterval(relogioGravacao); fluxo.getTracks().forEach((x) => x.stop()); ctx.close(); j.gravador = null;
+        const segundos = (Date.now() - inicio) / 1000;
+        if (segundos < 3) { aviso({ titulo: 'Gravação curta demais', texto: `Ficou com ${segundos.toFixed(1)} s. Clique em Gravar, leia o texto inteiro (10 a 20 s) e só então clique em Parar.`, cor: '#C8442F' }); desenhar(j, true); return; }
+        if (pico < 0.02) { aviso({ titulo: 'O microfone não captou som', texto: 'A gravação ficou muda. Escolha outro microfone na lista e confira o medidor antes de ler o texto.', cor: '#C8442F' }); desenhar(j, true); return; }
         const blob = new Blob(partes, { type: g.mimeType || 'audio/webm' });
         const ext = (g.mimeType || '').includes('ogg') ? 'ogg' : 'webm';
         const r = await enviarArquivo('voz', new File([blob], `gravacao.${ext}`));
         aviso({ titulo: r.ok ? 'Voz gravada' : 'Não salvou', texto: r.saida, cor: r.ok ? '#1F8A4C' : '#C8442F' });
         desenhar(j, true);
       };
-      g.start();
+      g.start(250);
     },
+    mic: (_, el) => { gravarMic(el.value); },
     enviar: async (_, el) => { const f = el.files[0]; if (!f) return; const r = await enviarArquivo('voz', f); aviso({ titulo: r.ok ? 'Voz salva' : 'Não salvou', texto: r.saida, cor: r.ok ? '#1F8A4C' : '#C8442F' }); desenhar(j, true); },
     campo: (_, el) => { t[el.name] = el.value; if (el.name === 'motor') { el.blur(); desenhar(j, true); } },
     ouvir: async () => {
@@ -1754,7 +1809,8 @@ async function renderVoz(j) {
   <h2>1. Sua voz</h2><div class="cartao">
     ${d.amostra.existe ? `<p><b>Gravação salva</b> · ${d.amostra.duracao ?? '?'} s · ${esc(d.amostra.quando)}</p>${audio('amostra.wav')}` : '<p>Ainda não tem gravação. Leia o texto abaixo em voz alta, num lugar silencioso, no seu ritmo normal (de 10 a 20 segundos).</p>'}
     <blockquote class="ler">${esc(TEXTO_GRAVAR)}</blockquote>
-    <div class="acoes-linha"><button class="bt pri" data-fn="gravar">● ${d.amostra.existe ? 'Gravar de novo' : 'Gravar'}</button><span class="tempo-gravacao neutro"></span>
+    <div class="campos-voz"><label>Microfone<select name="mic" data-mudar="mic"><option value="">o padrão do Windows</option></select></label></div>
+    <div class="acoes-linha"><button class="bt pri" data-fn="gravar">● ${d.amostra.existe ? 'Gravar de novo' : 'Gravar'}</button><span class="nivel-mic" title="Nível do microfone: precisa se mexer enquanto você fala"><i></i></span><span class="tempo-gravacao neutro"></span>
       <label class="bt">Enviar um áudio<input type="file" accept="audio/*" data-mudar="enviar" hidden></label></div>
     <small class="neutro">A gravação fica só no seu PC (marca/minha-voz.wav, fora do GitHub).</small></div>
   <h2>2. Testar</h2><div class="cartao">
@@ -1772,6 +1828,7 @@ async function renderVoz(j) {
     <p class="sub">Alternativa local ao ElevenLabs (clonagem, mais de 600 idiomas). Roda como programa separado (licença AGPL-3.0): o Ciello OS só usa o áudio que ele gera, pela API local dele.</p>
     ${m.voicestudio ? `<div class="acoes-linha"><button class="bt pri" data-fn="clonarVS" ${d.amostra.existe && !j.clonando ? '' : 'disabled'}>${j.clonando ? '<span class="girando"></span> Clonando…' : 'Clonar a minha gravação no VoiceStudio'}</button><small class="neutro">Na 1ª vez ele baixa o modelo (uns 2 GB).</small></div>`
       : `<ol class="passos-vs"><li>Baixe o instalador para Windows em <a href="https://github.com/debpalash/VoiceStudio/releases" target="_blank" rel="noopener">github.com/debpalash/VoiceStudio/releases</a> e instale.</li><li>Abra o VoiceStudio e deixe aberto.</li><li>Volte aqui: este cartão fica verde e libera a clonagem.</li></ol>`}</div></div>`;
+  preencherMics(j);
 }
 
 // ------------------------------------------------------------------ apps: equipe, agente e atividade
@@ -1872,6 +1929,56 @@ function renderTerminal(j) {
   j.el.addEventListener('pointerdown', () => setTimeout(() => term.focus(), 0));
   j.aoFechar = () => { obs.disconnect(); ws.close(); term.dispose(); api('/api/terminal/fechar', { id }).catch(() => {}); delete SALVO.terminais[id]; salvar(); };
 }
+// ------------------------------------------------------------------ apps: biblioteca (central/biblioteca.py)
+// Tudo o que a equipe já produziu num lugar só: vídeos, capas, roteiros, pesquisas e vozes, para ver, ouvir e achar a pasta.
+const SECOES_BIB = [['videos', 'Vídeos'], ['capas', 'Capas'], ['roteiros', 'Roteiros'], ['pesquisas', 'Pesquisas'], ['vozes', 'Vozes']];
+const tamanho = (b) => (b >= 1e6 ? `${(b / 1e6).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
+const urlBib = (rel) => `/api/biblioteca/arquivo/${rel.split('/').map(encodeURIComponent).join('/')}`;
+function roteiroLegivel(txt) {
+  let d; try { d = JSON.parse(txt); } catch { return `<pre class="console">${esc(txt)}</pre>`; }
+  const cenas = (d.scenes || []).map((c) => `<div class="cena-bib"><small>${esc(c.kicker || c.type || '')}</small><p>${esc(c.say || '')}</p></div>`).join('');
+  return `${cenas || '<div class="vazio">Roteiro sem cenas ainda.</div>'}${d.legenda ? `<div class="cena-bib legenda"><small>Legenda</small><p>${esc(d.legenda).replace(/\n/g, '<br>')}</p></div>` : ''}`;
+}
+async function renderBiblioteca(j) {
+  const d = await api('/api/app/biblioteca'); const S = d.secoes;
+  j.busca = j.busca || '';
+  const secoes = abas(j, SECOES_BIB.map(([k, r]) => [k, r, (S[k] || []).length]));
+  const todos = S[j.aba] || [];
+  const filtro = j.busca.trim().toLowerCase();
+  const itens = todos.filter((x) => !filtro || `${x.titulo} ${x.nome} ${x.grupo}`.toLowerCase().includes(filtro));
+  const sel = itens.find((x) => x.rel === j.sel) || itens[0];
+  j.fns = {
+    buscar: (_, el) => { j.busca = el.value; clearTimeout(j.tBusca); j.tBusca = setTimeout(() => { desenhar(j, true).then(() => { const b = $('[name=busca-bib]', j.corpo); if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }); }, 250); },
+    ver: ({ rel }) => { j.sel = rel; j.texto = null; desenhar(j, true); },
+    pasta: ({ rel }) => rapido('biblioteca_mostrar', { rel }, 'Pasta aberta'),
+    atualizar: () => desenhar(j, true),
+  };
+  const meta = (x) => `<small>${esc(x.grupo)} · ${ddmm(x.data)} · ${tamanho(x.tamanho)}</small>`;
+  const botaoPasta = (x) => `<button class="bt mini" data-fn="pasta" data-rel="${esc(x.rel)}">Mostrar na pasta</button>`;
+  const topo = `<div class="acoes topo"><button class="bt" data-fn="atualizar">${icone('atualizar')} Atualizar</button><button class="bt" data-abrir="video">Estúdio de Vídeo</button></div>`;
+  const cab = `<h1>Biblioteca</h1><p class="sub">Tudo o que a equipe já produziu, do mais novo para o mais antigo. Nada aqui é publicado ou apagado.</p>`;
+  const busca = `<div class="filtros busca-bib"><input name="busca-bib" type="search" placeholder="Buscar por título ou arquivo" value="${esc(j.busca)}" data-mudar="buscar" aria-label="Buscar na Biblioteca"></div>`;
+  const vazioSecao = { videos: 'Nenhum vídeo ainda. Gere um rascunho no Estúdio de Vídeo ou peça um vídeo ao Gerente.', capas: 'Nenhuma capa ainda.', roteiros: 'Nenhum roteiro ainda.', pesquisas: 'Nenhuma pesquisa ainda. Rode o radar em Tendências.', vozes: 'Nenhum áudio ainda. Teste uma voz no Estúdio de Voz.' }[j.aba];
+  let conteudoHtml;
+  if (!itens.length) conteudoHtml = `<div class="vazio">${filtro ? 'Nada com essa busca.' : vazioSecao}</div>`;
+  else if (j.aba === 'videos') {
+    conteudoHtml = `<div class="grade-bib videos">${itens.map((x) => `<figure class="item-bib"><video controls preload="metadata" src="${urlBib(x.rel)}#t=0.5"></video>
+      <figcaption><b title="${esc(x.nome)}">${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
+  } else if (j.aba === 'capas') {
+    conteudoHtml = `<div class="grade-bib capas">${itens.map((x) => `<figure class="item-bib"><a href="${urlBib(x.rel)}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img loading="lazy" src="${urlBib(x.rel)}" alt="${esc(x.titulo)}"></a>
+      <figcaption><b>${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
+  } else if (j.aba === 'vozes') {
+    conteudoHtml = `<div class="lista">${itens.map((x) => `<div class="linha-item audio-bib"><div class="cresce"><b>${esc(x.titulo)}</b>${meta(x)}${x.tamanho < 20000 ? '<small class="alerta-bib">Quase vazio: a gravação pode não ter captado o microfone.</small>' : ''}</div>
+      <audio controls preload="none" src="${urlBib(x.rel)}"></audio>${botaoPasta(x)}</div>`).join('')}</div>`;
+  } else {
+    if (sel && j.texto?.rel !== sel.rel) { const t = await api(`/api/biblioteca/texto/${sel.rel.split('/').map(encodeURIComponent).join('/')}`); j.texto = { rel: sel.rel, ...t }; }
+    const corpo = !j.texto?.ok ? '<div class="vazio">Não deu para abrir este arquivo.</div>' : j.texto.tipo === 'json' ? roteiroLegivel(j.texto.texto) : `<div class="md">${md(j.texto.texto)}</div>`;
+    conteudoHtml = `<div class="lista-detalhe"><div class="lista-pautas" role="listbox" aria-label="Arquivos">${itens.map((x) => `<button class="item-pauta ${x.rel === sel.rel ? 'on' : ''}" role="option" aria-selected="${x.rel === sel.rel}" data-fn="ver" data-rel="${esc(x.rel)}"><span><b>${esc(x.titulo)}</b>${meta(x)}</span></button>`).join('')}</div>
+      <article class="detalhe-pauta"><div class="cab-bib"><div><small>${esc(sel.grupo)} · <code>${esc(sel.rel)}</code></small><h2>${esc(sel.titulo)}</h2></div>${botaoPasta(sel)}</div>${corpo}</article></div>`;
+  }
+  j.corpo.innerHTML = `<div class="pagina larga">${topo}${cab}${secoes}${busca}${conteudoHtml}</div>`;
+}
+
 async function renderAtividade(j) {
   j.corpo.innerHTML = `<div class="pagina"><h1>Atividade</h1><p class="sub">O que cada agente e cada ferramenta fez, do mais novo para o mais antigo.</p><div class="lista">${estadoCache.eventos.map((e) =>
     `<div class="linha-item" data-abrir="agente:${esc(e.agente)}" style="cursor:pointer">${sprite(e.agente, 20)}<div class="cresce"><b>${esc(nome(e.agente))}</b><small>${esc(e.tarefa || '')}</small></div><small>${esc(e.ts.slice(11, 16))}</small>${chipEstado(e.estado)}</div>`).join('') || '<div class="vazio">Sem atividade ainda.</div>'}</div></div>`;

@@ -1,6 +1,6 @@
 ---
 name: gestor-anuncios
-description: Planeja e analisa anúncios pagos (Meta Ads): público, criativos, orçamento, testes A/B e leitura de resultado. Use proactively quando falarem em anúncio, impulsionar, tráfego pago ou orçamento de mídia.
+description: 'Planeja e analisa anúncios pagos (Meta Ads): público, criativos, orçamento, testes A/B e leitura de resultado. Use proactively quando falarem em anúncio, impulsionar, tráfego pago ou orçamento de mídia.'
 color: pink
 model: sonnet
 effort: medium

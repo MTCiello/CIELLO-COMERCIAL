@@ -231,12 +231,16 @@ def equipe():
     """Cada agente tem nome e descrição; cada comando só chama agentes que existem; o quadro de status conhece todos."""
     sys.path.insert(0, str(RAIZ / "central"))
     import status as st
+    sys.path.insert(0, str(RAIZ / "central" / "escritorio"))
+    from nucleo.residentes import problema_no_cabecalho
     agentes = {}
     for p in sorted((RAIZ / ".claude" / "agents").glob("*.md")):
         cab = p.read_text(encoding="utf-8").split("---")[1]
         nome = re.search(r"^name:\s*(\S+)", cab, re.M)
         if not nome or not re.search(r"^description:\s*\S", cab, re.M):
             return FALHA, f"{p.name} sem name/description no cabeçalho"
+        if problema_no_cabecalho(cab):
+            return FALHA, f"{p.name}: {problema_no_cabecalho(cab)}; o Claude Code ignora esse agente"
         agentes[nome.group(1)] = p
     problemas = []
     comandos = sorted((RAIZ / ".claude" / "skills").glob("*/SKILL.md"))
