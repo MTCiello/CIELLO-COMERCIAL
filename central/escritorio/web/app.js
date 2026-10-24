@@ -32,31 +32,64 @@ const SVG = {
   biblioteca: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M16 4v5"/><path d="M10 12.5v5l4-2.5z"/>',
   microfone: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>',
   reticencias: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  // trilho de navegação (20x20, traço)
+  grade: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+  quadro: '<rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/>',
+  lista: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+  numeros: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  instagram: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6"/>',
+  casa: '<path d="M3 12l9-8 9 8M5 10v10h14V10"/>',
+  pessoas: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M17 4a4 4 0 0 1 0 8M22 21c0-3-2-5-4-5.5"/>',
+  pessoa: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/>',
+  cartao: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/>',
+  extrato: '<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h6M9 17h6"/>',
+  meta: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 4"/>',
+  sol2: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  lupa: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  radar: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 12l6-6"/>',
+  documento: '<path d="M6 2h9l5 5v15H6zM14 2v6h6"/>',
+  pilha: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  imagem: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>',
+  nota: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  paleta: '<path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-.9-.7-1.2-.7-2 0-.8.7-1.5 1.5-1.5H17a4 4 0 0 0 4-4c0-5-4-9-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+  aviao: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
+  ajuda: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/>',
+  aviso: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+  mais: '<path d="M12 5v14M5 12h14"/>',
+  pausa: '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
   min: '<path d="M2 6h8"/>', max: '<rect x="2" y="2" width="8" height="8"/>', rest: '<rect x="2" y="4" width="6" height="6"/><path d="M4 4V2h6v6H8"/>', fechar: '<path d="M2 2l8 8M10 2l-8 8"/>',
 };
 const icone = (n, vb = 24) => `<svg viewBox="0 0 ${vb} ${vb}">${SVG[n] || SVG.agente}</svg>`;
 
 // ------------------------------------------------------------------ apps
+// cada app tem uma cor (ícone, item escolhido do trilho, botão principal, foco e notas); o resto da janela é neutro
+const TEMAS = {
+  conteudo: ['#B4236B', '#FFD8E8', '#3E001E'], tendencias: ['#A04100', '#FFDBC9', '#351000'], estudio: ['#B3261E', '#F9DEDC', '#410E0B'],
+  atendimento: ['#006A6A', '#B8F0EE', '#002020'], financeiro: ['#146C2E', '#C4EED0', '#072711'], comercial: ['#6750A4', '#EADDFF', '#21005D'],
+  os: ['#0B57D0', '#D3E3FD', '#041E49'],
+};
+const corTema = (t) => (TEMAS[t] || TEMAS.os)[0];
 const APPS = {
-  redes: { titulo: 'Rede social', icone: 'redes', cor: 'linear-gradient(135deg,#F07A9B,#7B3FE4)', ux: 'painel', w: 960, h: 720, render: renderRedes },
-  conexoes: { titulo: 'Conexões', icone: 'conexoes', cor: 'linear-gradient(135deg,#6FB0D8,#2F6A99)', ux: 'lista', w: 900, h: 700, render: renderConexoes },
-  objetivos: { titulo: 'Gerente · objetivos e esteiras', icone: 'alvo', cor: 'linear-gradient(135deg,#F1C95A,#D99A0B)', ux: 'estudio', w: 900, h: 700, render: renderObjetivos, cada: 3000 },
-  atendimento: { titulo: 'Atendimento', icone: 'balao', cor: 'linear-gradient(135deg,#4CC6D1,#1E8C99)', ux: 'lista', w: 760, h: 680, render: renderAtendimento, estatico: true },
-  video: { titulo: 'Estúdio de Vídeo', icone: 'video', cor: 'linear-gradient(135deg,#8E6BD8,#4B2F99)', ux: 'estudio', w: 1120, h: 760, render: renderVideo, estatico: true },
-  voz: { titulo: 'Estúdio de Voz', icone: 'microfone', cor: 'linear-gradient(135deg,#E9826C,#B5442F)', ux: 'estudio', w: 780, h: 700, render: renderVoz, estatico: true },
-  briefing: { titulo: 'Bom dia', icone: 'sol', cor: 'linear-gradient(135deg,#F7A35C,#E0722F)', ux: 'leitura', w: 640, h: 660, render: renderBriefing },
-  financeiro: { titulo: 'Financeiro', icone: 'financeiro', cor: 'linear-gradient(135deg,#3CC285,#1F8A4C)', ux: 'painel', w: 900, h: 680, render: renderFinanceiro },
-  comercial: { titulo: 'Comercial', icone: 'comercial', cor: 'linear-gradient(135deg,#5E92E6,#2F5BA8)', ux: 'painel', w: 880, h: 660, render: renderComercial },
-  conteudo: { titulo: 'Conteúdo e Instagram', icone: 'conteudo', cor: 'linear-gradient(135deg,#EC70A0,#C2416F)', ux: 'painel', w: 920, h: 680, render: renderConteudo },
-  tendencias: { titulo: 'Tendências', icone: 'tendencias', cor: 'linear-gradient(135deg,#F48D5E,#D24E36)', ux: 'lista', w: 740, h: 640, render: (j) => renderRelatorio(j, 'tendencias') },
-  concorrentes: { titulo: 'Concorrentes', icone: 'concorrentes', cor: 'linear-gradient(135deg,#4CC6D1,#1E8C99)', ux: 'leitura', w: 740, h: 620, render: (j) => renderRelatorio(j, 'concorrentes') },
-  anuncios: { titulo: 'Anúncios', icone: 'anuncios', cor: 'linear-gradient(135deg,#AE92EE,#6B4FBB)', ux: 'painel', w: 780, h: 540, render: renderAnuncios },
-  equipe: { titulo: 'Equipe', icone: 'equipe', cor: 'linear-gradient(135deg,#7385AC,#3A4C70)', ux: 'lista', w: 860, h: 620, render: renderEquipe, cada: 4000 },
-  atividade: { titulo: 'Atividade', icone: 'atividade', cor: 'linear-gradient(135deg,#7E8AA1,#4B566B)', ux: 'compacta', w: 520, h: 580, render: renderAtividade, cada: 3000 },
-  verificar: { titulo: 'Verificação', icone: 'verificar', cor: 'linear-gradient(135deg,#5BC0A0,#2D8C70)', acao: 'verificar' },
-  dados: { titulo: 'Boas-vindas e seus dados', icone: 'caixa', cor: 'linear-gradient(135deg,#C9A36A,#8A6A3B)', ux: 'leitura', w: 760, h: 680, render: renderDados },
-  biblioteca: { titulo: 'Biblioteca', icone: 'biblioteca', cor: 'linear-gradient(135deg,#5AA9E6,#2D5F99)', ux: 'painel', w: 1080, h: 740, render: renderBiblioteca, estatico: true },
-  atualizacoes: { titulo: 'Atualizações', icone: 'atualizar', cor: 'linear-gradient(135deg,#3A5582,#263A59)', ux: 'compacta', w: 620, h: 520, render: renderAtualizacoes },
+  redes: { titulo: 'Rede social', icone: 'redes', tema: 'conteudo', cor: corTema('conteudo'), ux: 'painel', w: 960, h: 720, render: renderRedes },
+  conexoes: { titulo: 'Conexões', icone: 'conexoes', tema: 'os', cor: corTema('os'), ux: 'lista', w: 900, h: 700, render: renderConexoes },
+  objetivos: { titulo: 'Gerente · objetivos e esteiras', icone: 'alvo', tema: 'os', cor: corTema('os'), ux: 'estudio', w: 900, h: 700, render: renderObjetivos, cada: 3000 },
+  atendimento: { titulo: 'Atendimento', icone: 'balao', tema: 'atendimento', cor: corTema('atendimento'), ux: 'lista', w: 760, h: 680, render: renderAtendimento, estatico: true },
+  video: { titulo: 'Estúdio de Vídeo', icone: 'video', tema: 'estudio', cor: corTema('estudio'), ux: 'estudio', w: 1120, h: 760, render: renderVideo, estatico: true },
+  voz: { titulo: 'Estúdio de Voz', icone: 'microfone', tema: 'estudio', cor: corTema('estudio'), ux: 'estudio', w: 780, h: 700, render: renderVoz, estatico: true },
+  briefing: { titulo: 'Bom dia', icone: 'sol', tema: 'os', cor: corTema('os'), ux: 'leitura', w: 640, h: 660, render: renderBriefing },
+  financeiro: { titulo: 'Financeiro', icone: 'financeiro', tema: 'financeiro', cor: corTema('financeiro'), ux: 'painel', w: 900, h: 680, render: renderFinanceiro },
+  comercial: { titulo: 'Comercial', icone: 'comercial', tema: 'comercial', cor: corTema('comercial'), ux: 'painel', w: 880, h: 660, render: renderComercial },
+  conteudo: { titulo: 'Conteúdo e Instagram', icone: 'conteudo', tema: 'conteudo', cor: corTema('conteudo'), ux: 'painel', w: 920, h: 680, render: renderConteudo },
+  tendencias: { titulo: 'Tendências', icone: 'tendencias', tema: 'tendencias', cor: corTema('tendencias'), ux: 'lista', w: 740, h: 640, render: (j) => renderRelatorio(j, 'tendencias') },
+  concorrentes: { titulo: 'Concorrentes', icone: 'concorrentes', tema: 'tendencias', cor: corTema('tendencias'), ux: 'leitura', w: 740, h: 620, render: (j) => renderRelatorio(j, 'concorrentes') },
+  anuncios: { titulo: 'Anúncios', icone: 'anuncios', tema: 'comercial', cor: corTema('comercial'), ux: 'painel', w: 780, h: 540, render: renderAnuncios },
+  equipe: { titulo: 'Equipe', icone: 'equipe', tema: 'os', cor: corTema('os'), ux: 'lista', w: 860, h: 620, render: renderEquipe, cada: 4000 },
+  atividade: { titulo: 'Atividade', icone: 'atividade', tema: 'os', cor: corTema('os'), ux: 'compacta', w: 520, h: 580, render: renderAtividade, cada: 3000 },
+  verificar: { titulo: 'Verificação', icone: 'verificar', tema: 'os', cor: corTema('os'), acao: 'verificar' },
+  dados: { titulo: 'Boas-vindas e seus dados', icone: 'caixa', tema: 'os', cor: corTema('os'), ux: 'leitura', w: 760, h: 680, render: renderDados },
+  biblioteca: { titulo: 'Biblioteca', icone: 'biblioteca', tema: 'conteudo', cor: corTema('conteudo'), ux: 'painel', w: 1080, h: 740, render: renderBiblioteca, estatico: true },
+  atualizacoes: { titulo: 'Atualizações', icone: 'atualizar', tema: 'os', cor: corTema('os'), ux: 'compacta', w: 620, h: 520, render: renderAtualizacoes },
 };
 // menu Iniciar por objetivo: o que você quer fazer agora
 const GRUPOS = [['Criar', ['biblioteca', 'redes', 'video', 'conteudo', 'voz', 'tendencias', 'concorrentes']], ['Vender', ['comercial', 'atendimento', 'anuncios']],
@@ -130,6 +163,37 @@ function md(txt) {
   return out.join('');
 }
 
+// tocador de áudio no lugar do <audio controls> do navegador: o <audio> fica escondido e o botão toca e pausa
+const minSeg = (x) => { const t = Math.max(0, Math.round(x || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+const tocador = (src, rotulo = 'Ouvir') => `<span class="tocador"><button type="button" class="tocar" aria-label="${esc(rotulo)}" title="${esc(rotulo)}">${icone('play')}</button>`
+  + `<span class="trilha" title="Pular para este ponto"><i></i></span><span class="tempo">0:00</span><audio preload="none" src="${esc(src)}"></audio></span>`;
+document.addEventListener('click', (e) => {
+  const alvo = e.target.closest('.tocador .tocar, .tocador .trilha'); if (!alvo) return;
+  const caixa = alvo.closest('.tocador'); const a = $('audio', caixa); const bt = $('.tocar', caixa);
+  if (alvo.classList.contains('trilha')) { if (a.duration) a.currentTime = a.duration * (e.offsetX / alvo.clientWidth); return; }
+  if (!a.dataset.ligado) {
+    a.dataset.ligado = '1';
+    const pinta = () => {
+      $('.tempo', caixa).textContent = a.duration && isFinite(a.duration) ? `${minSeg(a.currentTime)} / ${minSeg(a.duration)}` : minSeg(a.currentTime);
+      const p = a.duration && isFinite(a.duration) ? a.currentTime / a.duration : 0; $('.trilha i', caixa).style.width = `${100 * p}%`;
+      const onda = caixa.closest('.caixa-onda')?.querySelector('.onda'); // a onda da gravação acompanha o que está tocando
+      if (onda) [...onda.children].forEach((b, i, l) => b.classList.toggle('tocado', p > 0 && i / l.length <= p));
+    };
+    const icn = (tocando) => { bt.innerHTML = icone(tocando ? 'pausa' : 'play'); bt.setAttribute('aria-label', tocando ? 'Pausar' : 'Ouvir'); };
+    a.addEventListener('timeupdate', pinta); a.addEventListener('loadedmetadata', pinta);
+    a.addEventListener('play', () => icn(true)); a.addEventListener('pause', () => icn(false)); a.addEventListener('ended', () => { icn(false); a.currentTime = 0; });
+  }
+  if (a.paused) { document.querySelectorAll('.tocador audio').forEach((x) => { if (x !== a) x.pause(); }); a.play().catch(() => {}); } else a.pause();
+});
+// vários avisos viram uma faixa amarela só ("N avisos" + Revisar abre a lista); um aviso sozinho fica na faixa
+function faixaAvisos(lista, resumo, cor = '') {
+  if (!lista.length) return '';
+  if (lista.length === 1) return `<div class="faixa-grupo ${cor}" role="status"><div class="faixa-linha">${icone('aviso')}<span>${esc(lista[0])}</span></div></div>`;
+  return `<details class="faixa-grupo ${cor}"><summary>${icone('aviso')}<span><b>${esc(resumo)}</b> · ${esc(lista[0])}</span><span class="revisar">Revisar</span></summary><ul>${lista.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></details>`;
+}
+// iniciais para os avatares redondos (cliente, lead, voz)
+const iniciais = (t) => String(t || '?').replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((x) => x[0]).join('').toUpperCase() || '?';
+
 // personagem em pixel, na cor do agente (combina com o pixel-agents)
 const MOLDE = ['....HHHH....', '...HHHHHH...', '...HSSSSH...', '...SESSES...', '...SSSSSS...', '....SSSS....', '..CCCCCCCC..',
   '.CCCCCCCCCC.', '.SCCCCCCCCS.', '.SCCCCCCCCS.', '..CCCCCCCC..', '..PPP..PPP..', '..PPP..PPP..', '..BB....BB..'];
@@ -199,6 +263,8 @@ function abrir(chave, dados = {}) {
   const el = document.createElement('section');
   el.className = `janela ux-${def.ux || 'leitura'}`;
   const pag = layoutDe(def).pagina; if (pag) el.style.setProperty('--pagina-max', `${pag}px`);
+  const [cor, container, sobre] = TEMAS[def.tema] || TEMAS.os; // a cor do app vale para a janela inteira
+  el.style.setProperty('--app', cor); el.style.setProperty('--app-container', container); el.style.setProperty('--app-on', sobre);
   el.innerHTML = `<header class="barra"><span class="ic" style="background:${def.cor}">${icone(def.icone)}</span><span class="titulos"><b class="titulo">${esc(def.titulo)}</b><small class="secao"></small></span>
     <div class="ferramentas"></div>
     <div class="botoes"><button class="minimizar" title="Minimizar" aria-label="Minimizar">${icone('min', 12)}</button><button class="maximizar" title="Maximizar" aria-label="Maximizar">${icone('max', 12)}</button><button class="fechar" title="Fechar" aria-label="Fechar">${icone('fechar', 12)}</button></div></header>
@@ -234,10 +300,11 @@ function arrumar(j) {
   const lat = $('.lateral', j.el); const ferr = $('.ferramentas', j.el);
   const nav = $('.pagina > nav.abas:not(.seg)', j.corpo);
   lat.hidden = !nav; lat.replaceChildren(...(nav ? [nav] : []));
-  const semClaude = nav && $('.pagina > .sem-claude', j.corpo); if (semClaude) lat.appendChild(semClaude);
+  $('.barra > .sem-claude', j.el)?.remove();
+  lugarSemClaude(j);
   j.el.classList.toggle('com-lateral', !!nav);
   const on = nav && $('button.on', nav);
-  $('.secao', j.el).textContent = on ? on.firstChild.textContent.trim() : '';
+  $('.secao', j.el).textContent = on ? on.dataset.rotulo : '';
   ferr.replaceChildren();
   const barra = $('.pagina > .acoes.topo', j.corpo); if (!barra) return;
   const bts = [...barra.children]; barra.remove();
@@ -247,6 +314,13 @@ function arrumar(j) {
     ferr.insertAdjacentHTML('beforeend', `<div class="mais"><button class="bt-icone" data-mais title="Mais ações" aria-label="Mais ações" aria-expanded="false">${icone('reticencias')}</button><div class="menu-mais" hidden></div></div>`);
     $('.menu-mais', ferr).append(...bts.slice(cabem));
   }
+}
+// "Roda no seu PC, sem o Claude" vira um chip na barra de título quando a janela é larga; estreita, fica no conteúdo
+function lugarSemClaude(j) {
+  const chip = $('.barra > .sem-claude', j.el) || $('.pagina > .sem-claude', j.corpo); if (!chip) return;
+  const larga = j.el.offsetWidth >= 960; const naBarra = chip.parentElement.classList.contains('barra');
+  if (larga && !naBarra) $('.ferramentas', j.el).before(chip);
+  else if (!larga && naBarra) $('.pagina', j.corpo)?.prepend(chip);
 }
 const fecharMais = (fora) => document.querySelectorAll('.menu-mais:not([hidden])').forEach((m) => { if (!fora || !m.parentElement.contains(fora)) { m.hidden = true; m.previousElementSibling.setAttribute('aria-expanded', 'false'); } });
 document.addEventListener('pointerdown', (e) => fecharMais(e.target), true);
@@ -277,11 +351,13 @@ function maximizar(j) {
   j.max = true; j.el.classList.add('max');
   Object.assign(j.el.style, { left: '0px', top: '0px', width: '100%', height: `calc(100% - ${DOCK}px)` });
   $('.maximizar', j.el).innerHTML = icone('rest', 12); $('.maximizar', j.el).title = 'Restaurar';
+  lugarSemClaude(j);
 }
 function desmaximizar(j) {
   j.max = false; j.el.classList.remove('max');
   posicionar(j, j.prev || { x: 120, y: 30, w: j.def.w, h: j.def.h });
   $('.maximizar', j.el).innerHTML = icone('max', 12); $('.maximizar', j.el).title = 'Maximizar';
+  lugarSemClaude(j);
 }
 function alternarMax(j) { j.max ? desmaximizar(j) : maximizar(j); guardarGeo(j); }
 function fechar(j) {
@@ -363,7 +439,7 @@ function ligarJanela(j) {
     };
     const soltar = () => {
       b.removeEventListener('pointermove', mover); b.removeEventListener('pointerup', soltar); b.removeEventListener('pointercancel', soltar);
-      document.body.classList.remove('arrastando'); document.body.style.cursor = ''; semSelecao(); guardarGeo(j);
+      document.body.classList.remove('arrastando'); document.body.style.cursor = ''; semSelecao(); guardarGeo(j); lugarSemClaude(j);
     };
     b.addEventListener('pointermove', mover); b.addEventListener('pointerup', soltar); b.addEventListener('pointercancel', soltar);
   }));
@@ -613,7 +689,7 @@ window.addEventListener('message', (e) => {
 // ------------------------------------------------------------------ operação sem o Claude: formulários nas janelas
 // Os formulários chamam as ferramentas do PC direto (servidor: /api/operar e /api/enviar → central/escritorio/operacao.py).
 // Nada é enviado a ninguém daqui: as mensagens aparecem prontas com o link do WhatsApp e você envia.
-const SEM_CLAUDE = '<p class="sem-claude">Funciona sem o Claude: tudo nesta janela roda direto no seu PC.</p>';
+const SEM_CLAUDE = '<p class="sem-claude" title="Funciona sem o Claude: tudo nesta janela roda direto no seu PC.">Roda no seu PC, sem o Claude</p>';
 const linkar = (t) => esc(t).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u.includes('wa.me/') ? 'Abrir no WhatsApp' : u}</a>`);
 const hojeISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 const wa = (link, rotulo = 'Abrir no WhatsApp') => (link ? `<a class="bt wa" href="${esc(link)}" target="_blank" rel="noopener">${rotulo}</a>` : '<small class="neutro">sem WhatsApp: ligar</small>');
@@ -696,10 +772,19 @@ function dialogo(j, { titulo, texto = '', campos = [], botao = 'Salvar', enviar,
 }
 const formOp = (op, extra = {}) => (dados) => operar(op, { ...dados, ...extra });
 
-// abas dentro de uma janela (a escolhida fica guardada na janela entre as atualizações)
+// abas dentro de uma janela (a escolhida fica guardada na janela entre as atualizações). arrumar() leva a lista para o
+// trilho da esquerda: cada aba com ícone, nome curto e, se houver, o contador em cima do ícone
+const ICONE_ABA = { geral: 'casa', clientes: 'pessoas', cobranca: 'cartao', lancamentos: 'extrato', plano: 'calendario', rumo: 'meta',
+  hoje: 'sol2', leads: 'lista', buscar: 'lupa', producao: 'quadro', instagram: 'instagram', analise: 'numeros',
+  piloto: 'aviao', calendario: 'calendario', comentarios: 'balao', resultados: 'numeros', roteiros: 'documento', estilos: 'paleta',
+  posts: 'grade', videos: 'video', capas: 'imagem', pesquisas: 'radar', vozes: 'nota', pauta: 'radar', relatorio: 'documento',
+  responder: 'balao', faq: 'ajuda', gravar: 'microfone', narracoes: 'nota', voicestudio: 'pilha' };
+const ROTULO_CURTO = { geral: 'Resumo', cobranca: 'Cobrança', plano: 'Plano', rumo: 'Metas', buscar: 'Buscar', producao: 'Quadro', calendario: 'Calendário',
+  estilos: 'Estilos', relatorio: 'Relatório', 'Relatório completo': 'Relatório' };
 function abas(j, lista) {
   j.aba = lista.some(([k]) => k === j.aba) ? j.aba : lista[0][0];
-  return `<nav class="abas">${lista.map(([k, r, n]) => `<button class="${k === j.aba ? 'on' : ''}" data-fn="aba" data-aba="${k}">${esc(r)}${n ? ` <em>${n}</em>` : ''}</button>`).join('')}</nav>`;
+  return `<nav class="abas" aria-label="Seções">${lista.map(([k, r, n]) => `<button class="${k === j.aba ? 'on' : ''}" data-fn="aba" data-aba="${k}" data-rotulo="${esc(r)}" title="${esc(r)}"${k === j.aba ? ' aria-current="page"' : ''}>`
+    + `<span class="ind">${icone(ICONE_ABA[k] || 'grade')}${n ? `<em aria-label="${esc(n)} itens">${n}</em>` : ''}</span><span class="rot">${esc(ROTULO_CURTO[k] || r)}</span></button>`).join('')}</nav>`;
 }
 
 // ------------------------------------------------------------------ apps: bom dia
@@ -902,18 +987,33 @@ async function renderFinanceiro(j) {
       <div class="acoes"><button class="bt" data-fn="reclassificar" title="Aplica de novo as regras de financeiro/categorias.json">Reclassificar pelas regras</button></div>` : ''}
     <h2>Últimos lançamentos</h2><table class="tab"><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>${d.lancamentos.map((l) => `<tr><td>${ddmm(l.data)}</td><td>${esc(l.descricao)}${l.fatura_id ? ` <small class="neutro">fatura #${esc(l.fatura_id)}</small>` : ''}</td><td>${esc(l.categoria)}</td><td class="${+l.valor < 0 ? 'ruim' : 'bom'}">${brl(+l.valor)}</td></tr>`).join('') || '<tr><td colspan="4">Nenhum lançamento: importe o extrato ou lance à mão.</td></tr>'}</table>`;
   } else {
-    corpo = `<div class="kpis">${kpi('MRR', brl(s.mrr), `${num(s.clientes_ativos)} clientes · ARPA ${brl(atual.arpa)}`)}${kpi('Caixa hoje', brl(s.caixa), `30 dias: ${brl(s.previsao['30'])}`, s.previsao['30'] >= s.caixa ? 'bom' : 'ruim')}
-    ${kpi('Atrasadas', s.atrasadas.length, s.atrasadas.length ? brl(atraso) : 'tudo em dia', s.atrasadas.length ? 'ruim' : 'bom')}${s.testes.length ? kpi('Em teste grátis', s.testes.length, `+${brl(s.mrr_em_teste)}/mês se todos fecharem`, s.testes.some((t) => t.dias <= 5) ? 'ruim' : 'neutro') : kpi('CAC', atual.cac != null ? brl(atual.cac) : '—', atual.payback != null ? `paga em ${atual.payback.toFixed(1).replace('.', ',')} meses` : 'sem cliente de anúncio no mês')}</div>
-    ${s.sites_a_receber && s.sites_a_receber['90'] ? `<p class="sub" style="margin-top:8px">Sites a receber: ${brl(s.sites_a_receber['30'])} em 30 dias · ${brl(s.sites_a_receber['90'])} em 90 dias (já entram na previsão de caixa).</p>` : ''}
-    ${!d.faturado_no_mes && ativos.length ? `<div class="faixa">As faturas de ${nomeMes(d.mes)} ainda não foram geradas. <button class="bt pri mini" data-fn="faturar">Gerar agora</button></div>` : ''}
-    <div class="grade2" style="margin-top:12px"><div class="cartao"><h2 style="margin-top:0">MRR · últimos 6 meses</h2>${barras(d.serie.map((m) => ({ r: nomeMes(m.mes), v: m.mrr })))}</div>
-    <div class="cartao"><h2 style="margin-top:0">Previsão de caixa</h2>${barras([{ r: 'hoje', v: s.caixa, cor: 'linear-gradient(180deg,#5E92E6,#2F5BA8)' }, ...['30', '60', '90'].map((k) => ({ r: `${k} dias`, v: s.previsao[k], cor: s.previsao[k] < s.caixa ? 'linear-gradient(180deg,#E9826C,#C8442F)' : undefined }))])}</div></div>
-    ${s.alertas.length ? `<h2>Alertas</h2><div class="lista">${s.alertas.map((a) => `<div class="linha-item" style="border-left:4px solid var(--vermelho)">${esc(a)}</div>`).join('')}</div>` : ''}
-    <h2>Faturas em aberto (${d.faturas_abertas.length})</h2><div class="lista">${d.faturas_abertas.map((f) => `<div class="linha-item"><div class="cresce"><b>${esc(f.empresa)}</b><small>fatura #${esc(f.id)} · ${esc(f.descricao || f.competencia)} · vence ${ddmm(f.vencimento)}${f.dias > 0 ? ` · <span class="ruim">${f.dias} dias de atraso</span>` : ''}</small></div><b>${brl(f.valor)}</b><button class="bt mini pri" data-fn="recebi" data-id="${f.id}">Recebi</button></div>`).join('') || '<p class="sub">Tudo pago.</p>'}</div>
-    ${Object.keys(atual.por_categoria).length ? `<h2>Despesas do mês por categoria</h2>${barras(Object.entries(atual.por_categoria).slice(0, 6).map(([r, v]) => ({ r, v, cor: 'linear-gradient(180deg,#8FA3C7,#3A5582)' })))}` : ''}
+    // resumo primeiro: 4 números (com tom quando dizem bom ou atenção), entrou e saiu, próximas cobranças
+    const kpiT = (r, v, e, tom = '') => `<div class="kpi ${tom}"><small>${r}</small><strong>${v}</strong><em>${e}</em></div>`;
+    const serie6 = d.serie.slice(-6); const maxES = Math.max(1, ...serie6.map((m) => Math.max(m.receitas || 0, m.despesas || 0)));
+    const temES = serie6.some((m) => m.receitas || m.despesas);
+    const grafES = temES ? `<div class="graf-es" role="img" aria-label="Entradas e saídas dos últimos ${serie6.length} meses">${serie6.map((m) => `<div title="${nomeMes(m.mes)}: entrou ${brl(m.receitas)} · saiu ${brl(m.despesas)}"><span class="par"><i style="height:${100 * (m.receitas || 0) / maxES}%"></i><i class="saiu" style="height:${100 * (m.despesas || 0) / maxES}%"></i></span><small>${nomeMes(m.mes)}</small></div>`).join('')}</div>`
+      : '<div class="vazio">Sem lançamentos ainda. <button class="bt mini tom" data-fn="extrato">Importar o extrato</button> e o gráfico de entradas e saídas aparece aqui.</div>';
+    const cobrancas = d.faturas_abertas.slice().sort((a, b) => b.dias - a.dias).slice(0, 6);
+    corpo = `<div class="kpis">${kpiT('MRR', brl(s.mrr), `${num(s.clientes_ativos)} clientes · ARPA ${brl(atual.arpa)}`)}
+    ${kpiT('Caixa hoje', brl(s.caixa), `em 30 dias: ${brl(s.previsao['30'])}`, s.previsao['30'] >= s.caixa ? 'verde' : 'vermelho')}
+    ${kpiT(s.atrasadas.length ? 'Atrasadas' : 'A receber', s.atrasadas.length ? brl(atraso) : brl(d.faturas_abertas.reduce((t, f) => t + f.valor, 0)), s.atrasadas.length ? `${s.atrasadas.length} fatura${s.atrasadas.length > 1 ? 's' : ''} atrasada${s.atrasadas.length > 1 ? 's' : ''}` : 'tudo em dia', s.atrasadas.length ? 'amarelo' : '')}
+    ${s.testes.length ? kpiT('Em teste grátis', s.testes.length, `+${brl(s.mrr_em_teste)}/mês se todos fecharem`, s.testes.some((t) => t.dias <= 5) ? 'amarelo' : '') : kpiT('CAC', atual.cac != null ? brl(atual.cac) : '—', atual.payback != null ? `paga em ${atual.payback.toFixed(1).replace('.', ',')} meses` : 'sem cliente de anúncio no mês')}</div>
+    ${!d.faturado_no_mes && ativos.length ? `<div class="faixa"><span>As faturas de ${nomeMes(d.mes)} ainda não foram geradas.</span><button class="bt pri mini" data-fn="faturar">Gerar agora</button></div>` : ''}
+    ${faixaAvisos(s.alertas, `${s.alertas.length} alertas`)}
+    <div class="linha-paineis">
+      <section class="painel"><div class="cab-painel"><h2>Entrou e saiu, últimos ${serie6.length} meses</h2><span class="legenda-graf"><i></i>Entrou</span><span class="legenda-graf"><i class="saiu"></i>Saiu</span></div>${grafES}<small class="neutro">Despesa média: ${brl(s.despesa_media)}/mês</small></section>
+      <section class="painel estreito"><div class="cab-painel"><h2>Próximas cobranças</h2>${d.faturas_abertas.length > cobrancas.length ? `<small class="neutro">${d.faturas_abertas.length} em aberto</small>` : ''}</div>
+        <div>${cobrancas.map((f) => `<div class="cobranca"><span class="avatar-ini ${f.dias > 0 ? 'vermelho' : 'neutro'}">${esc(iniciais(f.empresa))}</span><span class="quem"><b title="${esc(f.empresa)}">${esc(f.empresa)}</b><small>${f.dias > 0 ? `Venceu ${ddmm(f.vencimento)} · ${f.dias} dias` : `Vence ${ddmm(f.vencimento)}`} · ${esc(f.descricao || f.competencia)}</small></span>
+          <span class="chip ${f.dias > 0 ? 'erro' : 'trabalhando'}">${f.dias > 0 ? 'Atrasada' : 'Em dia'}</span><b>${brl(f.valor)}</b><button class="bt mini tom" data-fn="recebi" data-id="${f.id}" title="Fatura #${esc(f.id)}">Recebi</button></div>`).join('') || '<p class="sub">Tudo pago. As faturas abertas aparecem aqui.</p>'}</div>
+        <div class="rodape-painel">${s.atrasadas.length || d.cobrancas.length ? '<button class="bt tom" data-fn="aba" data-aba="cobranca">Lembrar atrasados</button>' : ''}<button class="bt fantasma" data-fn="pagamento">Registrar pagamento</button></div></section>
+    </div>
+    ${s.sites_a_receber && s.sites_a_receber['90'] ? `<p class="sub" style="margin-top:12px">Sites a receber: ${brl(s.sites_a_receber['30'])} em 30 dias · ${brl(s.sites_a_receber['90'])} em 90 dias (já entram na previsão de caixa).</p>` : ''}
+    <div class="grade2" style="margin-top:16px"><section class="painel"><h2>MRR · últimos 6 meses</h2>${barras(d.serie.map((m) => ({ r: nomeMes(m.mes), v: m.mrr })))}</section>
+    <section class="painel"><h2>Previsão de caixa</h2>${barras([{ r: 'hoje', v: s.caixa, cor: 'var(--app-on)' }, ...['30', '60', '90'].map((k) => ({ r: `${k} dias`, v: s.previsao[k], cor: s.previsao[k] < s.caixa ? '#B3261E' : undefined }))])}</section></div>
+    ${Object.keys(atual.por_categoria).length ? `<h2>Despesas do mês por categoria</h2><section class="painel">${barras(Object.entries(atual.por_categoria).slice(0, 6).map(([r, v]) => ({ r, v, cor: '#A8C7B0' })))}</section>` : ''}
     <div class="acoes"><button class="bt" data-acao="fin_resumo">Resumo completo</button><button class="bt" data-abrir="agente:financeiro">Agente Financeiro</button></div>`;
   }
-  j.corpo.innerHTML = `<div class="pagina"><h1>Financeiro</h1><p class="sub">${num(s.clientes_ativos)} clientes ativos · despesa média ${brl(s.despesa_media)}/mês</p>${SEM_CLAUDE}${barra}
+  j.corpo.innerHTML = `<div class="pagina">${SEM_CLAUDE}${barra}
   ${abas(j, [['geral', 'Visão geral'], ['clientes', 'Clientes', d.clientes.length], ['cobranca', 'Cobrança e pós-venda', fila], ['lancamentos', 'Lançamentos', d.a_classificar.length + d.gastos.alertas.filter((a) => a.nivel !== 'dica').length || ''], ['plano', 'Plano do ano'], ['rumo', 'Metas e decisões']])}${corpo}</div>`;
 }
 
@@ -1177,10 +1277,20 @@ async function renderComercial(j) {
     corpo = `<div class="passos"><h2>Sem leads ainda</h2><ol><li><button class="bt pri" data-fn="aba" data-aba="buscar">Buscar empresas no Google Maps</button></li>
       <li><button class="bt" data-fn="planilha">Importar uma planilha</button></li><li><button class="bt" data-fn="entrada">Registrar quem chegou sozinho</button> (DM, anúncio, indicação)</li></ol></div>`;
   } else {
-    const topo = Math.max(1, d.funil.etapas[0].n);
-    corpo = `${d.ritmo && d.ritmo.tem_meta ? ritmoFaixa(d.ritmo, true) : `<p class="sub">Sem meta de clientes ainda: <a href="#" data-fn="definirMeta">defina a meta</a> e o OS mostra aqui o ritmo da semana.</p>`}<div class="grade2"><div class="cartao"><h2 style="margin-top:0">Funil</h2><div class="funil">${d.funil.etapas.map((e, i) => `<div><span>${esc(e.etapa)}</span><i style="width:${Math.max(2, 100 * e.n / topo)}%"></i><b>${e.n}</b><small>${i && d.funil.etapas[i - 1].n ? Math.round(100 * e.n / d.funil.etapas[i - 1].n) + '%' : ''}</small></div>`).join('')}</div></div>
-    <div class="cartao"><h2 style="margin-top:0">Quentes · responder hoje</h2><div class="lista">${d.quentes.map((l) => `<div class="linha-item"><div class="cresce"><b>${esc(l.empresa)}</b><small>${esc([l.segmento, l.cidade, l.obs].filter(Boolean).join(' · '))}</small></div>
-      ${l.telefone ? `<a class="bt mini wa" href="${esc(zap(l.telefone))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}<button class="bt mini" data-fn="agendar" data-id="${l.id}">${l.agenda ? `Demo ${ddmm(l.agenda)} ${l.agenda.slice(11, 16)}` : 'Agendar demo'}</button>${etapaSel(l)}</div>`).join('') || '<p class="sub">Ninguém esperando resposta.</p>'}</div></div></div>
+    // funil numa barra só (resumo primeiro) e o quadro dos leads por etapa (kanban)
+    const et = d.funil.etapas; const topo = Math.max(1, et[0].n); const ult = et[et.length - 1].n;
+    const funil = `<div class="faixa-funil"><div class="num-funil"><small>Leads no funil</small><b>${num(d.funil.total)}</b>${d.funil.perdidos ? `<small>${num(d.funil.perdidos)} perdidos ou frios</small>` : ''}</div>
+      <div class="barra-funil" role="img" aria-label="Funil: ${et.map((e) => `${e.n} ${ROTULO_ETAPA[e.etapa] || e.etapa}`).join(', ')}">${et.map((e, i) => `<span class="f${i}" style="flex:${Math.max(1, e.n)}" title="${esc(ROTULO_ETAPA[e.etapa] || e.etapa)}: ${e.n}${i && et[i - 1].n ? ` (${Math.round(100 * e.n / et[i - 1].n)}% da etapa anterior)` : ''}">${e.n} ${esc(ROTULO_ETAPA[e.etapa] || e.etapa)}</span>`).join('')}</div>
+      <div class="num-funil"><small>Viram cliente</small><b class="app">${Math.round(100 * ult / topo)}%</b></div></div>`;
+    const COLS_LEAD = [['novo', 'Novos', ['novo']], ['contatado', 'Contatados', ['contatado']], ['conversando', 'Conversando', ['respondeu', 'demo']], ['proposta', 'Proposta', ['proposta']], ['cliente', 'Fechado', ['cliente']]];
+    const cartaoLead = (l) => { const hoje = l.proximo_contato && l.proximo_contato <= d.hoje; const quente = ['respondeu', 'demo', 'proposta'].includes(l.etapa);
+      return `<article class="cartao-k lead-k ${hoje && quente ? 'atencao' : ''}"><div class="cab-k"><span class="avatar-ini ${l.etapa === 'cliente' ? 'verde' : ''}">${esc(iniciais(l.empresa))}</span><b title="${esc(l.empresa)}">${esc(l.empresa)}</b></div>
+        <small>${esc([l.segmento, l.cidade, l.pontos && `${l.pontos} pts`].filter(Boolean).join(' · '))}</small>${l.obs ? `<small title="${esc(l.obs)}">${esc(l.obs.length > 70 ? l.obs.slice(0, 68) + '…' : l.obs)}</small>` : ''}
+        <span class="chips-k">${chipOferta(l)}${l.agenda ? `<span class="chip trabalhando">Demo ${ddmm(l.agenda)} ${esc(l.agenda.slice(11, 16))}</span>` : hoje ? `<span class="chip esperando">${quente ? 'Responder hoje' : 'Follow-up hoje'}</span>` : ''}</span>
+        <div class="acoes-k">${l.telefone ? `<a class="bt mini wa" href="${esc(zap(l.telefone))}" target="_blank" rel="noopener" title="${esc(l.telefone)}">WhatsApp</a>` : ''}${quente ? `<button class="bt mini tom" data-fn="agendar" data-id="${l.id}">${l.agenda ? 'Remarcar' : 'Agendar demo'}</button>` : ''}${etapaSel(l)}</div></article>`; };
+    const quadro = `<div class="kanban">${COLS_LEAD.map(([k, r, ets]) => { const l = d.leads.filter((x) => ets.includes(x.etapa)).sort((a, b) => (+b.pontos || 0) - (+a.pontos || 0)); const mostra = l.slice(0, 6);
+      return `<section class="coluna" aria-label="${r}"><div class="coluna-cab"><b>${r}</b><span class="contador">${l.length}</span></div>${mostra.map(cartaoLead).join('') || '<div class="vazio-coluna">Ninguém nesta etapa.</div>'}${l.length > mostra.length ? `<a href="#" class="mais-k" data-fn="aba" data-aba="leads">+${l.length - mostra.length} em Leads</a>` : ''}</section>`; }).join('')}</div>`;
+    corpo = `${funil}${d.ritmo && d.ritmo.tem_meta ? ritmoFaixa(d.ritmo, true) : `<p class="sub" style="margin-top:12px">Sem meta de clientes ainda: <a href="#" data-fn="definirMeta">defina a meta</a> e o OS mostra aqui o ritmo da semana.</p>`}${quadro}
     ${d.agenda.proximas.length ? `<h2>Agenda de demos (${d.agenda.proximas.length})</h2>${d.agenda.proximas.map((a, i) => msgSimples(a, i, 'agenda_proximas',
       `${esc(a.empresa)} <span class="chip ${a.dias === 0 ? 'erro' : 'esperando'}">${a.dias === 0 ? 'hoje' : a.dias === 1 ? 'amanhã' : ddmm(a.quando)} às ${esc(a.quando.slice(11, 16))}</span> <small class="neutro">${a.dias === 0 ? 'lembrete' : 'confirmação'}</small>`,
       `<a class="bt" href="${esc(a.agenda_google)}" target="_blank" rel="noopener">Google Agenda</a><button class="bt" data-fn="agendar" data-id="${a.id}">Remarcar</button>`)).join('')}` : ''}
@@ -1191,7 +1301,7 @@ async function renderComercial(j) {
     <h2>Abordar · melhores leads novos (${d.abordar.length})</h2>${d.abordar.map((l, i) => msgCartao(l, i, 'abordar')).join('') || '<p class="sub">Fila vazia: busque mais leads na aba Buscar leads.</p>'}
     ${d.oportunidades.length ? `<h2>Vender para quem já é cliente (${d.oportunidades.length})</h2><p class="sub">Quem já confia em você compra o 2º produto mais fácil do que um lead novo.</p>${d.oportunidades.map((o, i) => msgSimples(o, i, 'oportunidades', `${esc(o.empresa)} <span class="chip ${o.oferta === 'site' ? 'oferta-site' : 'oferta-crm'}">oferta: ${o.oferta === 'site' ? 'site' : 'CRM'}</span> <small class="neutro">${esc(o.porque)}</small>`, `<button class="bt" data-fn="ofereci" data-chave="${o.cliente_id}:${o.oferta}" title="Some da lista por 60 dias">Já ofereci</button>`)).join('')}` : ''}`;
   }
-  j.corpo.innerHTML = `<div class="pagina"><h1>Comercial</h1><p class="sub">${d.funil ? `${num(d.funil.total)} leads · ${num(d.funil.perdidos)} perdidos ou frios` : `Prospecção, follow-up e fechamento do ${esc(PROD())}.`}</p>${SEM_CLAUDE}${barra}
+  j.corpo.innerHTML = `<div class="pagina">${d.funil ? '' : `<h1>Comercial</h1><p class="sub">Prospecção, follow-up e fechamento do ${esc(PROD())}.</p>`}${SEM_CLAUDE}${barra}
   ${abas(j, [['hoje', 'Hoje', d.followups.length + d.quentes.length + d.testes.length + d.agenda.proximas.length || ''], ['leads', 'Leads', d.leads.length], ['buscar', 'Buscar leads']])}${corpo}</div>`;
 }
 
@@ -1246,20 +1356,55 @@ async function renderConteudo(j) {
     },
     produzir: ({ post }) => { const q = d.quadro.find((x) => x.post === post); pedirEquipe(`Termine o post ${post} ("${q.titulo}", vai ao ar em ${ddmm(q.data)}). Falta: ${q.falta.map((e) => (d.etapas.find((x) => x[0] === e) || [e, e])[1]).join(', ')}. Siga o AGENTE.md (narração com a voz do Estúdio de Voz, vídeo final, capa, legenda) e me mostre o vídeo e a legenda antes de agendar. Só agende no Metricool depois que eu aprovar.`, `Post ${ddmm(q.data)}`); },
   };
-  const etapaChip = (q, e, rot) => `<span class="etapa-post ${q.etapas[e] ? 'feita' : q.proximo === e ? 'proxima' : ''}" title="${esc(rot)}${q.etapas[e] ? ': feito' : q.proximo === e ? ': próximo passo' : ''}">${q.etapas[e] ? '✓' : ''} ${esc(rot)}</span>`;
   const quando = (q) => (q.dias === 0 ? 'hoje' : q.dias === 1 ? 'amanhã' : q.dias < 0 ? `há ${-q.dias} dias` : `em ${q.dias} dias`);
-  const producao = `${d.alertas.length ? `<div class="lista" style="margin-top:12px">${d.alertas.map((a) => `<div class="linha-item achado alto">${esc(a)}</div>`).join('')}</div>` : ''}
-  <h2>Próximos posts</h2><div class="quadro-posts">${d.quadro.filter((q) => q.dias >= 0).map((q) => cartaoPost(q)).join('') || '<div class="vazio">Nenhum post na agenda. Rode a esteira <b>Semana de conteúdo</b> em Objetivos.</div>'}</div>
-  ${d.quadro.some((q) => q.dias < 0) ? `<details class="passados"><summary>Posts passados (${d.quadro.filter((q) => q.dias < 0).length})</summary><div class="quadro-posts">${d.quadro.filter((q) => q.dias < 0).reverse().map((q) => cartaoPost(q)).join('')}</div></details>` : ''}`;
-  function cartaoPost(q) { return `<div class="cartao post-linha ${q.pronto ? 'pronto' : ''}">
-    <div class="post-cab"><b>${ddmm(q.data)}</b> <small class="${q.dias >= 0 && q.dias <= 2 && !q.pronto ? 'ruim' : 'neutro'}">${quando(q)}</small> <span>${esc(q.titulo)}</span>${q.status_historico ? `<small class="neutro" title="historico.md">· ${esc(q.status_historico.slice(0, 60))}</small>` : ''}</div>
-    <div class="etapas-post">${d.etapas.map(([e, r]) => etapaChip(q, e, r)).join('<i>›</i>')}</div>
-    <div class="acoes-linha">${q.pronto ? '<span class="chip pronto">pronto e agendado</span>' : `<small class="neutro">Próximo: <b>${esc((d.etapas.find((x) => x[0] === q.proximo) || ['', ''])[1])}</b> com ${esc(nome(q.dono))}</small>`}
-      <button class="bt mini" data-fn="legenda" data-post="${esc(q.post)}">${q.etapas.legenda ? 'Ver legenda' : 'Gerar legenda'}</button>
-      ${!q.etapas.agendado ? (q.etapas.final && q.dias >= 0 ? `<button class="bt mini pri" data-fn="postar" data-post="${esc(q.post)}" title="Vídeo, capa, legenda e horário num lugar só">Postar</button>` : `<button class="bt mini" data-fn="agendei" data-post="${esc(q.post)}">${q.dias < 0 ? 'Foi publicado?' : 'Já agendei'}</button>`) : ''}
-      ${!q.etapas.final && q.dias >= 0 ? `<button class="bt mini" data-abrir="video" title="Gera o vídeo no seu PC, sem o Claude">Gerar no Estúdio</button>` : ''}
-      ${!q.pronto && q.dias >= 0 ? `<button class="bt mini ${q.etapas.final ? '' : 'pri'}" data-fn="produzir" data-post="${esc(q.post)}" title="Abre o Claude com a equipe de conteúdo">Terminar com a equipe</button>` : ''}</div></div>`; }
-  const rodapeProducao = `<p class="sub">Próximos horários livres (seg, qua e sex às 10h): ${d.horarios.map((h) => ddmm(h)).join(', ')}. Para criar posts novos: <a data-abrir="objetivos" style="cursor:pointer;color:var(--azul-claro)">Objetivos → Semana de conteúdo</a>.</p>`;
+  const rotEtapa = (e) => (d.etapas.find((x) => x[0] === e) || ['', e])[1];
+  // quadro por etapa (kanban): cada post na coluna do próximo passo; agendado e no ar no fim
+  const COLUNAS = [['roteiro', 'Roteiro', 'Nenhum roteiro esperando. Crie em Estúdio de Vídeo → Novo roteiro.'], ['narracao', 'Narração', 'Nada esperando narração.'],
+    ['video', 'Vídeo', 'Nenhum vídeo em produção.'], ['capa', 'Capa e legenda', 'Nada esperando capa ou legenda.'],
+    ['agendado', 'Agendado', 'Quando você registrar o agendamento, o post vem para cá.'], ['noar', 'No ar', 'Os posts publicados aparecem aqui.']];
+  const publicado = (q) => /publicad/i.test(q.status_historico || '');
+  const colunaDe = (q) => (q.etapas.agendado || publicado(q) ? (q.dias < 0 || publicado(q) ? 'noar' : 'agendado')
+    : ({ roteiro: 'roteiro', narracao: 'narracao', video: 'video', final: 'video', capa: 'capa', legenda: 'capa', agendado: 'capa' }[q.proximo] || 'capa'));
+  const atrasado = (q) => (q.dias >= 0 && q.dias <= 2 && !q.etapas.final) || (q.dias < 0 && !q.etapas.agendado && !publicado(q));
+  const thumb = (q) => { const k = encodeURIComponent(q.post);
+    if (q.etapas.capa) return `<span class="thumb-k"><img src="/midia/capas/${k}.jpg" alt="" loading="lazy"></span>`;
+    if (q.etapas.final) return `<span class="thumb-k video"><video muted preload="metadata" src="/midia/final/${k}.mp4#t=1"></video>${icone('play')}</span>`;
+    return `<span class="thumb-k"><span>${esc(rotEtapa(q.proximo || 'roteiro').toLowerCase())}</span></span>`; };
+  function cartaoPost(q) {
+    const col = colunaDe(q); const feitas = d.etapas.filter(([e]) => q.etapas[e]).length;
+    const acoes = [`<button class="bt mini" data-fn="legenda" data-post="${esc(q.post)}">${q.etapas.legenda ? 'Ver legenda' : 'Gerar legenda'}</button>`];
+    if (!q.etapas.agendado) acoes.unshift(q.etapas.final && q.dias >= 0 ? `<button class="bt mini" data-fn="postar" data-post="${esc(q.post)}" title="Vídeo, capa, legenda e horário num lugar só">Postar</button>`
+      : `<button class="bt mini" data-fn="agendei" data-post="${esc(q.post)}">${q.dias < 0 ? 'Foi publicado?' : 'Já agendei'}</button>`);
+    if (!q.pronto && q.dias >= 0 && !q.etapas.final) acoes.splice(1, 0, `<button class="bt mini" data-fn="produzir" data-post="${esc(q.post)}" title="Abre o Claude com a equipe de conteúdo">Terminar com a equipe</button>`);
+    if (!q.etapas.final && q.dias >= 0) acoes.push('<button class="bt mini" data-abrir="video" title="Gera o vídeo no seu PC, sem o Claude">Gerar no Estúdio</button>');
+    // sem vídeo final ainda, o próximo passo é gerar o vídeo: ele fica à vista
+    if (!q.etapas.final && q.dias >= 0) acoes.unshift(acoes.pop());
+    // a 1ª ação fica à vista (com tom); as outras vão para o menu de três pontos
+    const [prim, ...resto] = acoes.filter((a) => !(q.etapas.agendado && /Já agendei/.test(a)));
+    const status = col === 'noar' ? `<span class="chip pronto">${publicado(q) ? 'Publicado' : 'No ar'}</span>`
+      : col === 'agendado' ? `<span class="chip pronto">Agendado${q.status_historico ? '' : ''}</span>`
+      : q.proximo === 'agendado' ? '<span class="chip esperando">Pronto para agendar</span>'
+      : q.dias < 0 ? '<span class="chip erro">Passou da data</span>'
+      : `<small>Próximo: ${esc(rotEtapa(q.proximo))} · ${esc(nome(q.dono))}</small>`;
+    return `<article class="cartao-k ${atrasado(q) ? 'urgente' : q.proximo === 'agendado' && q.dias >= 0 ? 'atencao' : ''}">${thumb(q)}<div class="info-k"><b title="${esc(q.post)}">${esc(q.titulo)}</b>
+      <span class="data-k ${atrasado(q) ? 'ruim' : ''}">${quando(q)[0].toUpperCase() + quando(q).slice(1)} · ${ddmm(q.data)}</span>
+      ${col !== 'noar' ? `<span class="progresso-k" role="img" aria-label="${feitas} de ${d.etapas.length} etapas"><i style="width:${(100 * feitas) / d.etapas.length}%"></i></span>` : ''}${status}</div>
+      <div class="acoes-k">${prim.replace('class="bt mini"', 'class="bt mini tom"')}${resto.length ? `<div class="mais"><button class="bt-icone" data-mais title="Mais ações" aria-label="Mais ações de ${esc(q.titulo)}" aria-expanded="false">${icone('reticencias')}</button><div class="menu-mais" hidden>${resto.join('')}</div></div>` : ''}</div></article>`;
+  }
+  const futuros = d.quadro.filter((q) => q.dias >= 0);
+  const kpisProd = `<div class="kpis">${[['Saem esta semana', futuros.filter((q) => q.dias <= 6).length, '', ''],
+    ['Prontos para agendar', futuros.filter((q) => q.etapas.final && !q.etapas.agendado).length, 'vídeo final pronto', 'verde'],
+    ['Em produção', futuros.filter((q) => !q.etapas.final).length, 'sem vídeo final', ''],
+    ['Perto da data sem vídeo', futuros.filter((q) => q.dias <= 2 && !q.etapas.final).length, 'saem em até 2 dias', 'vermelho']]
+    .map(([r, v, e, c]) => `<div class="kpi ${v && c ? c : ''}"><small>${r}</small><strong>${v}</strong>${e ? `<em class="neutro">${e}</em>` : ''}</div>`).join('')}</div>`;
+  const banner = d.alertas.length ? faixaAvisos(d.alertas, `${d.alertas.length} avisos no quadro`) : '';
+  const porColuna = Object.fromEntries(COLUNAS.map(([k]) => [k, []]));
+  d.quadro.forEach((q) => porColuna[colunaDe(q)].push(q));
+  porColuna.noar.reverse();
+  const producao = `${kpisProd}${banner}${d.quadro.length ? `<div class="kanban">${COLUNAS.map(([k, r, vazio]) => { const l = porColuna[k]; const mostra = k === 'noar' ? l.slice(0, 6) : l;
+    return `<section class="coluna" aria-label="${esc(r)}"><div class="coluna-cab"><b>${esc(r)}</b><span class="contador">${l.length}</span></div>${mostra.map(cartaoPost).join('') || `<div class="vazio-coluna">${esc(vazio)}</div>`}${l.length > mostra.length ? `<small class="neutro mais-k">+${l.length - mostra.length} mais antigos</small>` : ''}</section>`; }).join('')}</div>`
+    : '<div class="vazio" style="margin-top:16px">Nenhum post na agenda. Cada roteiro vira um cartão aqui e anda pelas colunas até ir ao ar.<div class="acoes" style="justify-content:center"><button class="bt pri" data-abrir="objetivos">Semana de conteúdo</button><button class="bt" data-abrir="video">Novo roteiro no Estúdio</button></div></div>'}`;
+  const rodapeProducao = `<p class="sub rodape-k">Próximos horários livres (seg, qua e sex às 10h): ${d.horarios.map((h) => ddmm(h)).join(', ')}. Para criar posts novos: <a data-abrir="objetivos" style="cursor:pointer;color:var(--app)">Objetivos → Semana de conteúdo</a>.</p>`;
   const analise = `<div class="acoes" style="margin-top:12px"><button class="bt pri" data-acao="relatorio">${icone('play')} Gerar o relatório da semana</button><button class="bt" data-fn="retrato">Anotar números novos</button>
     <button class="bt" data-fn="analisar" title="Abre o Claude com o analista">Discutir com o Analista</button></div>
     ${d.relatorio ? `<p class="sub">${esc(d.relatorio.arquivo)} · o que mudar está no fim.</p><div class="cartao md">${md(d.relatorio.texto)}</div>` : '<div class="vazio">Sem relatório ainda. Anote os números do Instagram e clique em <b>Gerar o relatório da semana</b>.</div>'}`;
@@ -1269,9 +1414,9 @@ async function renderConteudo(j) {
   <h2>Posts · próximos e recentes</h2><div class="posts">${d.posts.map((p) => `<div class="post">${p.capa ? `<img src="${esc(p.capa)}" alt="" loading="lazy">` : '<div class="sem-capa"></div>'}<div><b>${ddmm(p.data)}</b>${esc(p.titulo)}<br>${p.final ? '<span class="chip pronto">vídeo pronto</span>' : '<span class="chip esperando">sem vídeo final</span>'}</div></div>`).join('')}</div>
   ${i && i.reels.length ? `<h2>Reels que mais alcançaram</h2><table class="tab"><tr><th>Data</th><th>Gancho</th><th>Alcance</th><th>Tempo</th></tr>${i.reels.map((r) => `<tr><td>${ddmm(r.data)}</td><td>${esc(r.gancho)}</td><td>${num(r.alcance)}</td><td>${String(r.tempo_medio_s ?? '').replace('.', ',')}s</td></tr>`).join('')}</table>` : ''}
   <div class="acoes"><button class="bt" data-acao="ganchos">Ranking de ganchos</button><button class="bt" data-abrir="agente:produtor-video">Produtor de vídeo</button><button class="bt" data-abrir="agente:postagem">Postagem</button></div>`;
-  j.corpo.innerHTML = `<div class="pagina"><h1>Conteúdo e Instagram</h1><p class="sub">${esc(EMPRESA.instagram || 'Instagram')}${i ? ` · retrato de ${ddmm(i.data)}` : ''}</p>${SEM_CLAUDE}
+  j.corpo.innerHTML = `<div class="pagina">${j.aba === 'instagram' ? `<p class="sub">${esc(EMPRESA.instagram || 'Instagram')}${i ? ` · retrato de ${ddmm(i.data)}` : ''}</p>` : ''}${SEM_CLAUDE}
   <div class="acoes topo"><button class="bt pri" data-fn="retrato">Anotar números do Instagram</button><button class="bt" data-acao="relatorio">Relatório semanal</button><button class="bt" data-abrir="voz">Estúdio de Voz</button></div>
-  ${abas(j, [['producao', 'Produção', d.quadro.filter((q) => !q.pronto && q.dias >= 0).length || ''], ['instagram', 'Instagram'], ['analise', 'Análise']])}${j.aba === 'instagram' ? insta : j.aba === 'analise' ? analise : producao + rodapeProducao}</div>`;
+  ${abas(j, [['producao', 'Quadro de produção', d.quadro.filter((q) => !q.pronto && q.dias >= 0).length || ''], ['instagram', 'Instagram'], ['analise', 'Análise']])}${j.aba === 'instagram' ? insta : j.aba === 'analise' ? analise : producao + rodapeProducao}</div>`;
 }
 
 // ------------------------------------------------------------------ apps: conexões (central/conexoes.py)
@@ -1418,26 +1563,34 @@ async function renderRelatorio(j, qual) {
     semana: () => pedirEquipe(`Crie os 3 reels da semana a partir da pauta do radar mais recente (${d.relatorio.arquivo}), seguindo a rotina /semana. Me mostre os 3 temas e os roteiros para aprovar antes de produzir, e peça confirmação antes de agendar.`, 'Semana de conteúdo'),
     comClaude: () => pedirEquipe(qual === 'tendencias' ? 'Use o pesquisador-mercado: monte o radar de tendências desta semana com busca web, no mesmo formato do radar mais recente em radar/ (pauta sugerida com nota, pilar, assunto e ângulo para pequeno negócio, e fontes). Marque com ⚠️ o que precisa confirmar.' : 'Use o pesquisador-mercado: confira preço, planos e oferta dos concorrentes de comercial/concorrentes.json com busca web e me diga o que mudou e o que isso significa para o preço do ' + PROD() + '.', qual === 'tendencias' ? 'Radar' : 'Concorrentes'),
   };
-  // nota da pauta: verde a partir de 75, ouro a partir de 65
-  const nota = (n, cls = '') => `<span class="nota ${+n >= 75 ? 'alta' : +n >= 65 ? 'media' : ''} ${cls}">${esc(n)}</span>`;
+  // nota da pauta: o item escolhido fica cheio na cor do app, nota alta (75+) com tom, o resto neutro
+  const nota = (n, cls = '') => `<span class="nota ${+n >= 75 ? 'alta' : ''} ${cls}">${esc(n)}</span>`;
   j.fns.ver = ({ i }) => { j.sel = +i; desenhar(j, true); };
+  j.fns.pilar = ({ p: pl }) => { j.pilar = pl; j.sel = null; desenhar(j, true); };
   const topo = `<div class="acoes topo">${pauta.length ? '<button class="bt pri" data-fn="semana">Fazer os 3 reels da semana</button>' : ''}<button class="bt ${pauta.length ? '' : 'pri'}" data-acao="${acao[0]}">${icone('atualizar')} ${acao[1]}</button><button class="bt" data-fn="comClaude" title="Sem internet no radar? O Claude monta com busca web">Montar com o Claude</button><button class="bt" data-abrir="agente:pesquisador-mercado">Pesquisador</button></div>`;
   const cab = `<h1>${titulo}</h1><p class="sub">${sub}${d.relatorio ? ` · <code>${esc(d.relatorio.arquivo)}</code>` : ''}</p>`;
-  const relatorio = d.relatorio ? `<div class="cartao md">${md(d.relatorio.texto)}</div>` : '<div class="vazio">Nenhum relatório ainda.</div>';
+  const relatorio = d.relatorio ? `<div class="cartao md">${md(d.relatorio.texto)}</div>` : '<div class="vazio">Nenhum relatório ainda. Clique em <b>' + esc(acao[1]) + '</b> ou em <b>Montar com o Claude</b>: o relatório aparece aqui.</div>';
   if (!pauta.length) { j.corpo.innerHTML = `<div class="pagina">${topo}${cab}${relatorio}</div>`; return; }
-  j.aba = j.aba === 'relatorio' ? 'relatorio' : 'pauta';
-  const seg = `<nav class="abas seg"><button class="${j.aba === 'pauta' ? 'on' : ''}" data-fn="aba" data-aba="pauta">Pauta</button><button class="${j.aba === 'relatorio' ? 'on' : ''}" data-fn="aba" data-aba="relatorio">Relatório completo</button></nav>`;
-  if (j.aba === 'relatorio') { j.corpo.innerHTML = `<div class="pagina">${topo}${cab}${seg}<div style="margin-top:14px">${relatorio}</div></div>`; return; }
-  const sel = Math.min(j.sel || 0, pauta.length - 1); const x = pauta[sel];
+  const secoes = abas(j, [['pauta', 'Pauta', pauta.length], ['relatorio', 'Relatório completo']]);
+  // fontes que o radar não conseguiu ler: um chip vermelho pequeno, não uma faixa
+  const falhas = ((d.relatorio.texto.match(/^>\s*Fontes que falharam:\s*(.+)$/m) || [])[1] || '').split(/,\s*/).filter(Boolean);
+  const chipFalhas = falhas.length ? `<span class="chip erro" title="${esc(falhas.join(', '))}">${falhas.length} ${falhas.length > 1 ? 'fontes falharam' : 'fonte falhou'}: ${esc(falhas.map((f) => f.replace(/\s*\(.*\)$/, '')).join(', '))}</span>` : '';
+  if (j.aba === 'relatorio') { j.corpo.innerHTML = `<div class="pagina">${topo}${secoes}<p class="sub" style="margin-top:0"><code>${esc(d.relatorio.arquivo)}</code></p>${relatorio}</div>`; return; }
+  const pilares = [...new Set(pauta.map((p) => p.pilar))];
+  if (j.pilar && !pilares.includes(j.pilar)) j.pilar = '';
+  const vis = pauta.map((p, i) => [p, i]).filter(([p]) => !j.pilar || p.pilar === j.pilar);
+  const sel = vis.some(([, i]) => i === j.sel) ? j.sel : vis[0][1]; const x = pauta[sel];
   const confirmar = /⚠/.test(x.assunto);
-  j.corpo.innerHTML = `<div class="pagina larga">${topo}${cab}${seg}
+  const filtros = `<div class="chips-filtro" role="group" aria-label="Filtrar por pilar"><button class="chip-filtro ${j.pilar ? '' : 'on'}" data-fn="pilar" data-p="" aria-pressed="${!j.pilar}">Todos ${pauta.length}</button>${pilares.map((pl) => `<button class="chip-filtro ${j.pilar === pl ? 'on' : ''}" data-fn="pilar" data-p="${esc(pl)}" aria-pressed="${j.pilar === pl}">${esc(pl)} ${pauta.filter((p) => p.pilar === pl).length}</button>`).join('')}
+    <span class="espaco"></span>${chipFalhas}<small class="neutro">${esc(d.relatorio.arquivo)}</small></div>`;
+  j.corpo.innerHTML = `<div class="pagina larga">${topo}${secoes}${filtros}
   <div class="lista-detalhe">
-    <div class="lista-pautas" role="listbox" aria-label="Pauta sugerida">${pauta.map((p, i) => `<button class="item-pauta ${i === sel ? 'on' : ''}" role="option" aria-selected="${i === sel}" data-fn="ver" data-i="${i}">${nota(p.nota)}<span><b>${esc(p.assunto.replace(/⚠️?\s*/g, ''))}</b><small>${esc(p.pilar)}${/⚠/.test(p.assunto) ? ' · confirmar a fonte' : ''}</small></span></button>`).join('')}</div>
+    <div class="lista-pautas" role="listbox" aria-label="Pauta sugerida">${vis.map(([p, i]) => `<button class="item-pauta ${i === sel ? 'on' : ''}" role="option" aria-selected="${i === sel}" data-fn="ver" data-i="${i}">${nota(p.nota)}<span><b>${esc(p.assunto.replace(/⚠️?\s*/g, ''))}</b><span class="chips-k"><span class="chip app">${esc(p.pilar)}</span>${/⚠/.test(p.assunto) ? '<span class="chip esperando">confirmar a fonte</span>' : ''}</span></span></button>`).join('')}</div>
     <article class="detalhe-pauta">
-      <div class="cab-pauta">${nota(x.nota, 'grande')}<div><small>${esc(x.pilar)}</small><h2>${esc(x.assunto.replace(/⚠️?\s*/g, ''))}</h2></div></div>
+      <div class="cab-pauta"><div class="linha-nota"><span class="nota grande cheia">Nota ${esc(x.nota)}</span><small>${esc(x.pilar)} · de 0 a 100</small></div><h2>${esc(x.assunto.replace(/⚠️?\s*/g, ''))}</h2></div>
       <div class="angulo"><small>Ângulo para pequeno negócio</small><p>${esc(x.angulo)}</p></div>
-      ${confirmar ? '<div class="faixa">As fontes divergem: confirme na fonte oficial antes de roteirizar.</div>' : ''}
-      <div class="acoes"><button class="bt pri" data-fn="roteiro" data-i="${sel}">Virar roteiro</button><button class="bt" data-abrir="agente:pesquisador-mercado">Pedir ao Pesquisador</button></div>
+      ${confirmar ? '<div class="faixa"><span>As fontes divergem: confirme na fonte oficial antes de roteirizar.</span></div>' : ''}
+      <div class="acoes"><button class="bt pri" data-fn="roteiro" data-i="${sel}">Virar roteiro</button><button class="bt tom" data-abrir="agente:pesquisador-mercado">Pedir ao Pesquisador</button></div>
     </article>
   </div></div>`;
 }
@@ -1614,7 +1767,7 @@ async function renderAtendimento(j) {
   const d = await api('/api/app/atendimento');
   j.achados = j.achados || null;
   const faltam = d.faq.filter((x) => !x.completa);
-  const cliente = () => d.clientes.find((c) => c.id === ($('[name=cliente]', j.corpo) || {}).value);
+  const cliente = () => d.clientes.find((c) => c.id === j.para);
   const linkPara = (texto) => { const c = cliente(); return c ? zap(c.whatsapp) + `?text=${encodeURIComponent(texto)}` : ''; };
   const editar = (it, titulo) => dialogo(j, { titulo, texto: it ? `Seção: ${esc(it.secao)}. A resposta fica no FAQ e o Sucesso do Cliente passa a usar.` : 'Pergunta nova para o FAQ: escreva como o cliente pergunta e a resposta como você responderia.',
     campos: [{ nome: 'pergunta', rotulo: 'Pergunta', valor: it ? it.pergunta : ($('.objetivo-texto', j.corpo)?.value || ''), obrigatorio: true },
@@ -1630,18 +1783,37 @@ async function renderAtendimento(j) {
     zap: ({ i }) => { const l = linkPara($(`[data-resp="${i}"]`, j.corpo).value); if (l) window.open(l, '_blank', 'noopener'); else aviso({ titulo: 'Escolha o cliente', texto: 'Selecione para quem é a resposta (ou copie e cole no WhatsApp).', cor: '#E0A81C' }); },
     completar: ({ i }) => editar(d.faq[+i], 'Completar o FAQ'),
     nova: () => editar(null, 'Pergunta nova'),
-    claude: () => pedirEquipe(`Use o sucesso-cliente: um cliente perguntou "${j.pergunta || $('.objetivo-texto', j.corpo).value}". Responda com base em comercial/faq.md, no meu tom (curto, simpático, sem prometer o que não está no FAQ). Se a resposta não estiver no FAQ, escreva um rascunho e me pergunte antes de acrescentar. Não envie nada.`, 'Atendimento'),
+    // para quem é a resposta: os primeiros clientes em chips, todos na lista; escolher não redesenha (o texto digitado fica)
+    para: ({ id }, el) => {
+      j.para = el.tagName === 'SELECT' ? el.value : (j.para === id ? '' : id);
+      j.corpo.querySelectorAll('[data-fn="para"]').forEach((b) => { const on = b.dataset.id === j.para; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+      const sel = $('[name=cliente]', j.corpo); if (sel) sel.value = d.clientes.slice(0, 3).some((c) => c.id === j.para) ? '' : j.para;
+    },
+    claude: () => pedirEquipe(`Use o sucesso-cliente: um cliente perguntou "${j.pergunta || $('.objetivo-texto', j.corpo)?.value || ''}". Responda com base em comercial/faq.md, no meu tom (curto, simpático, sem prometer o que não está no FAQ). Se a resposta não estiver no FAQ, escreva um rascunho e me pergunte antes de acrescentar. Não envie nada.`, 'Atendimento'),
   };
   const pergunta = j.pergunta || '';
-  j.corpo.innerHTML = `<div class="pagina"><h1>Atendimento</h1><p class="sub">Cole a pergunta do cliente: a resposta sai do FAQ da empresa, pronta para revisar e mandar no WhatsApp.</p>${SEM_CLAUDE}
-  <div class="objetivo compacto"><textarea class="objetivo-texto" rows="2" placeholder="Ex.: funciona no celular? / quanto fica por mês? / esqueci de pagar o boleto">${esc(pergunta)}</textarea><button class="bt pri" data-fn="mandar">Achar resposta</button></div>
-  <div class="campos-voz" style="margin:8px 0 0"><label>Para quem é a resposta<select name="cliente"><option value="">escolha o cliente (para o link do WhatsApp)</option>${d.clientes.map((c) => `<option value="${esc(c.id)}">${esc(c.empresa)}${c.contato ? ` · ${esc(c.contato)}` : ''}</option>`).join('')}</select></label></div>
-  ${j.achados ? (j.achados.length ? `<h2>Respostas do FAQ</h2>${j.achados.map((a, i) => `<div class="cartao msg"><div class="cab"><b>${esc(a.pergunta)}</b> <small class="neutro">${esc(a.secao)}</small>${a.completa ? '' : ' <span class="chip esperando">resposta incompleta</span>'}</div>
-      <textarea class="texto-msg" data-resp="${i}" rows="3">${esc(a.resposta)}</textarea>
-      <div class="acoes-linha"><button class="bt wa" data-fn="zap" data-i="${i}">Abrir no WhatsApp</button><button class="bt" data-fn="copiar" data-i="${i}">Copiar</button>${a.completa ? '' : `<button class="bt pri" data-fn="completar" data-i="${a.i}">Completar no FAQ</button>`}</div></div>`).join('')}`
-    : '<div class="vazio">Nada no FAQ sobre isso.</div>') + `<div class="acoes"><button class="bt" data-fn="nova">Escrever a resposta e guardar no FAQ</button><button class="bt" data-fn="claude">Pedir ao Sucesso do Cliente (Claude)</button></div>` : ''}
-  ${faltam.length ? `<h2>FAQ incompleto (${faltam.length})</h2><p class="sub">São as perguntas que todo cliente faz. Responda uma vez e o atendimento passa a usar.</p><div class="lista">${faltam.map((x) => `<div class="linha-item"><div class="cresce"><b>${esc(x.pergunta)}</b><small>${esc(x.resposta || '(vazia)')}</small></div><button class="bt mini pri" data-fn="completar" data-i="${x.i}">Responder</button></div>`).join('')}</div>` : ''}
-  <details class="passados"><summary>FAQ inteiro (${d.faq.length})</summary><div class="lista">${d.faq.map((x) => `<div class="linha-item"><div class="cresce"><b>${esc(x.pergunta)}</b><small style="white-space:normal">${esc(x.resposta)}</small></div><button class="bt mini" data-fn="completar" data-i="${x.i}">Editar</button></div>`).join('')}</div></details></div>`;
+  if (j.para && !d.clientes.some((c) => c.id === j.para)) j.para = '';
+  const secoes = abas(j, [['responder', 'Responder'], ['faq', 'FAQ', faltam.length || '']]);
+  const completas = d.faq.length - faltam.length; const pct = d.faq.length ? Math.round(100 * completas / d.faq.length) : 0;
+  const lado = `<aside class="painel"><div class="cab-faq"><div class="anel" style="--p:${pct}%" role="img" aria-label="${completas} de ${d.faq.length} respostas completas"><span>${completas}/${d.faq.length}</span></div>
+      <div><b>${!d.faq.length ? 'FAQ vazio' : faltam.length ? (pct >= 60 ? 'FAQ quase completo' : 'Complete o FAQ') : 'FAQ completo'}</b><small>${faltam.length ? `Faltam ${faltam.length} resposta${faltam.length > 1 ? 's' : ''} que todo cliente pede` : 'Todas as perguntas têm resposta'}</small></div></div>
+    ${faltam.length ? `<div class="lista-faltam">${faltam.map((x) => `<div><span>${esc(x.pergunta)}<small>${esc(x.resposta || '(vazia)')}</small></span><button class="bt mini tom" data-fn="completar" data-i="${x.i}">Responder</button></div>`).join('')}</div>` : ''}
+    <div class="acoes-linha"><a href="#" data-fn="aba" data-aba="faq">Ver o FAQ inteiro</a><span style="flex:1"></span><button class="bt mini fantasma" data-fn="nova">+ Pergunta nova</button></div></aside>`;
+  const chipsPara = d.clientes.slice(0, 3).map((c) => `<button class="chip-filtro ${j.para === c.id ? 'on' : ''}" data-fn="para" data-id="${esc(c.id)}" aria-pressed="${j.para === c.id}" title="${esc(c.empresa)}${c.contato ? ` · ${esc(c.contato)}` : ''}">${esc(c.empresa.replace(/\s*\(exemplo\)/, ''))}</button>`).join('');
+  const respostas = !j.achados ? '' : `${j.achados.length ? j.achados.map((a, i) => `<section class="painel resposta-faq"><div class="cab"><b>${i ? 'Outra resposta' : 'Resposta pronta'} · ${esc(a.pergunta)}</b><span class="chip">Do FAQ: ${esc(a.secao)}</span>${a.completa ? '' : '<span class="chip esperando">resposta incompleta</span>'}</div>
+      <div class="bolha-wa"><textarea class="texto-msg" data-resp="${i}" rows="3" aria-label="Resposta para o cliente">${esc(a.resposta)}</textarea></div>
+      <div class="acoes-linha"><button class="bt pri" data-fn="zap" data-i="${i}">Abrir no WhatsApp</button><button class="bt tom" data-fn="copiar" data-i="${i}">Copiar</button>${a.completa ? '' : `<button class="bt fantasma" data-fn="completar" data-i="${a.i}">Completar no FAQ</button>`}</div></section>`).join('')
+    : '<div class="vazio">Nada no FAQ sobre isso. Escreva a resposta uma vez e guarde: da próxima vez ela aparece aqui.</div>'}
+    <div class="acoes" style="margin-top:0"><button class="bt tom" data-fn="nova">Escrever a resposta e guardar no FAQ</button><button class="bt" data-fn="claude">Pedir ao Sucesso do Cliente (Claude)</button></div>`;
+  const responder = `<div class="atendimento"><div><section class="painel"><h2>O que o cliente perguntou?</h2>
+      <div class="busca-grande" style="margin-top:14px">${icone('lupa')}<textarea class="objetivo-texto" rows="1" aria-label="Pergunta do cliente" placeholder="Ex.: funciona no celular? / quanto fica por mês?">${esc(pergunta)}</textarea><button class="bt pri" data-fn="mandar">Achar resposta</button></div>
+      <div class="para" style="margin-top:12px"><small>Para:</small>${chipsPara}<select name="cliente" data-mudar="para" aria-label="Para quem é a resposta"><option value="">${d.clientes.length > 3 ? 'Outro cliente…' : 'Escolha o cliente…'}</option>${d.clientes.map((c) => `<option value="${esc(c.id)}" ${j.para === c.id && !d.clientes.slice(0, 3).some((x) => x.id === c.id) ? 'selected' : ''}>${esc(c.empresa)}${c.contato ? ` · ${esc(c.contato)}` : ''}</option>`).join('')}</select></div>
+      <small class="neutro" style="display:block;margin-top:10px">A resposta sai do FAQ da empresa, pronta para revisar e mandar no WhatsApp.</small></section>
+    ${respostas}</div>${lado}</div>`;
+  const faq = `<div class="cab-bib" style="margin-top:4px"><h2 style="margin:0">FAQ inteiro (${d.faq.length})</h2><button class="bt tom mini" data-fn="nova">+ Pergunta nova</button></div>
+    <p class="sub" style="margin-top:6px">São as perguntas que todo cliente faz. Responda uma vez e o atendimento passa a usar.</p>
+    <div class="lista">${d.faq.map((x) => `<div class="linha-item"><div class="cresce"><b>${esc(x.pergunta)}</b>${x.completa ? '' : ' <span class="chip esperando">incompleta</span>'}<small style="white-space:normal">${esc(x.resposta)}</small></div><button class="bt mini ${x.completa ? '' : 'tom'}" data-fn="completar" data-i="${x.i}">${x.completa ? 'Editar' : 'Responder'}</button></div>`).join('') || '<div class="vazio">O FAQ está vazio. Clique em <b>+ Pergunta nova</b> e escreva a pergunta como o cliente faz.</div>'}</div>`;
+  j.corpo.innerHTML = `<div class="pagina">${secoes}${SEM_CLAUDE}${j.aba === 'faq' ? faq : responder}</div>`;
 }
 
 // ------------------------------------------------------------------ apps: objetivos e esteiras
@@ -1739,11 +1911,23 @@ async function preencherMics(j) {
   const atual = lerMic();
   sel.innerHTML = '<option value="">o padrão do Windows</option>' + mics.map((x, i) => `<option value="${esc(x.deviceId)}" ${x.deviceId === atual ? 'selected' : ''}>${esc(x.label || `Microfone ${i + 1}`)}</option>`).join('');
 }
+// a onda sonora da gravação salva: lê o áudio no navegador e desenha 48 barras (fica guardada até a gravação mudar)
+async function ondaDaGravacao(j, url) {
+  try {
+    if (!j.onda || j.onda.url !== url) {
+      const buf = await (await fetch(url)).arrayBuffer(); const ctx = new AudioContext(); const audio = await ctx.decodeAudioData(buf); ctx.close();
+      const dados = audio.getChannelData(0); const n = 48; const passo = Math.floor(dados.length / n) || 1; const picos = [];
+      for (let i = 0; i < n; i++) { let m = 0; for (let k = i * passo; k < Math.min(dados.length, (i + 1) * passo); k += 16) m = Math.max(m, Math.abs(dados[k])); picos.push(m); }
+      const max = Math.max(0.01, ...picos); j.onda = { url, alturas: picos.map((v) => Math.max(6, Math.round(72 * v / max))) };
+    }
+    $('.caixa-onda .onda', j.corpo)?.querySelectorAll('span').forEach((b, i) => { b.style.height = `${j.onda.alturas[i]}px`; });
+  } catch { /* sem a onda: o tocador continua funcionando */ }
+}
 async function renderVoz(j) {
   const d = await api('/api/app/voz'); const p = d.preferencia; const m = d.motores;
   j.teste = j.teste || { motor: p.motor === 'teste' ? 'kokoro' : p.motor, voz: p.voz, perfil: p.perfil, texto: d.texto_padrao };
   const t = j.teste;
-  const audio = (arq) => `<audio controls preload="none" src="/api/voz/arquivo/${encodeURIComponent(arq)}?t=${Date.now()}"></audio>`;
+  const audio = (arq, rotulo) => tocador(`/api/voz/arquivo/${encodeURIComponent(arq)}?t=${Date.now()}`, rotulo);
   const escolhida = { kokoro: `voz pronta ${(d.vozes_kokoro.find((v) => v[0] === p.voz) || [p.voz, p.voz])[1]}`, chatterbox: 'a sua voz (Chatterbox)', voicestudio: `VoiceStudio${p.perfil ? ` · voz ${p.perfil}` : ''}` }[p.motor] || p.motor;
   j.fns = {
     gravar: async (_, el) => {
@@ -1761,12 +1945,15 @@ async function renderVoz(j) {
       const amostra = new Float32Array(an.fftSize); let pico = 0;
       const partes = []; const g = new MediaRecorder(fluxo); j.gravador = g; const inicio = Date.now();
       g.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
-      el.innerHTML = '■ Parar'; el.classList.add('gravando');
+      el.classList.add('gravando'); el.setAttribute('aria-label', 'Parar a gravação'); el.title = 'Parar a gravação';
+      const rotulo = $('.rotulo-gravar b', j.corpo); if (rotulo) rotulo.textContent = 'Gravando… clique para parar';
       const medidor = $('.nivel-mic i', j.corpo);
+      const onda = $('.caixa-onda .onda', j.corpo); const barras = onda ? [...onda.children] : []; const niveis = []; onda?.classList.add('cheia');
       const relogioGravacao = setInterval(() => {
         an.getFloatTimeDomainData(amostra); let n = 0; for (const v of amostra) n = Math.max(n, Math.abs(v)); pico = Math.max(pico, n);
         if (medidor) medidor.style.width = `${Math.min(100, Math.round(n * 140))}%`;
-        $('.tempo-gravacao', j.corpo).textContent = `${Math.round((Date.now() - inicio) / 1000)} s`;
+        niveis.push(n); barras.forEach((b, i) => { const v = niveis[niveis.length - barras.length + i] || 0; b.style.height = `${Math.max(6, Math.min(72, Math.round(v * 180)))}px`; });
+        const tg = $('.tempo-gravacao', j.corpo); if (tg) tg.textContent = `${Math.round((Date.now() - inicio) / 1000)} s`;
       }, 100);
       g.onstop = async () => {
         clearInterval(relogioGravacao); fluxo.getTracks().forEach((x) => x.stop()); ctx.close(); j.gravador = null;
@@ -1803,31 +1990,46 @@ async function renderVoz(j) {
     },
     vozesVS: async () => { const r = await operar('voz_vozes_vs', {}); if (!r.ok) return aviso({ titulo: 'VoiceStudio', texto: r.saida, cor: '#C8442F' }); j.vozesVS = r.vozes; desenhar(j, true); },
   };
+  j.fns.escolher = ({ motor, voz }) => { t.motor = motor; if (voz) t.voz = voz; desenhar(j, true); };
   const falta = !m.kokoro || !m.chatterbox;
-  j.corpo.innerHTML = `<div class="pagina"><h1>Estúdio de Voz</h1><p class="sub">Grave a sua voz, ouça como ela fica e escolha a voz dos vídeos. Hoje os vídeos saem com <b>${esc(escolhida)}</b>.</p>${SEM_CLAUDE}
-  ${falta ? `<div class="faixa">${!m.kokoro && !m.chatterbox ? 'A voz ainda não está instalada neste PC.' : `Falta instalar ${!m.kokoro ? 'o Kokoro' : 'o Chatterbox'}.`} Baixa uns 3 GB e precisa do Python 3.12. <button class="bt pri mini" data-acao="voz_instalar">Instalar agora</button></div>` : ''}
-  <h2>1. Sua voz</h2><div class="cartao">
-    ${d.amostra.existe ? `<p><b>Gravação salva</b> · ${d.amostra.duracao ?? '?'} s · ${esc(d.amostra.quando)}</p>${audio('amostra.wav')}` : '<p>Ainda não tem gravação. Leia o texto abaixo em voz alta, num lugar silencioso, no seu ritmo normal (de 10 a 20 segundos).</p>'}
-    <blockquote class="ler">${esc(TEXTO_GRAVAR)}</blockquote>
-    <div class="campos-voz"><label>Microfone<select name="mic" data-mudar="mic"><option value="">o padrão do Windows</option></select></label></div>
-    <div class="acoes-linha"><button class="bt pri" data-fn="gravar">● ${d.amostra.existe ? 'Gravar de novo' : 'Gravar'}</button><span class="nivel-mic" title="Nível do microfone: precisa se mexer enquanto você fala"><i></i></span><span class="tempo-gravacao neutro"></span>
-      <label class="bt">Enviar um áudio<input type="file" accept="audio/*" data-mudar="enviar" hidden></label></div>
-    <small class="neutro">A gravação fica só no seu PC (marca/minha-voz.wav, fora do GitHub).</small></div>
-  <h2>2. Testar</h2><div class="cartao">
-    <div class="campos-voz"><label>Motor<select name="motor" data-mudar="campo">${['kokoro', 'chatterbox', 'voicestudio'].map((k) => `<option value="${k}" ${t.motor === k ? 'selected' : ''}>${MOTOR_ROTULO[k]}${k !== 'kokoro' && !m[k] ? ' (indisponível)' : ''}</option>`).join('')}</select></label>
-      ${t.motor === 'kokoro' ? `<label>Voz<select name="voz" data-mudar="campo">${d.vozes_kokoro.map(([v, r]) => `<option value="${v}" ${t.voz === v ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>` : ''}
-      ${t.motor === 'voicestudio' ? `<label>Voz no VoiceStudio${j.vozesVS ? `<select name="perfil" data-mudar="campo"><option value="">a padrão do app</option>${j.vozesVS.map((v) => `<option value="${esc(v.id)}" ${t.perfil === v.id ? 'selected' : ''}>${esc(v.nome || v.id)}</option>`).join('')}</select>` : `<button class="bt mini" data-fn="vozesVS" ${m.voicestudio ? '' : 'disabled'}>Carregar vozes</button>`}</label>` : ''}</div>
-    ${t.motor === 'chatterbox' && !d.amostra.existe ? '<p class="ruim">O Chatterbox clona a partir da sua gravação: grave primeiro (passo 1).</p>' : ''}
-    ${t.motor === 'chatterbox' ? '<p class="sub">No processador, a 1ª vez baixa o modelo (uns minutos) e cada frase leva de 20 s a 1 min.</p>' : ''}
-    <textarea name="texto" rows="2">${esc(t.texto)}</textarea>
-    <div class="acoes-linha"><button class="bt pri" data-fn="ouvir" ${j.gerando ? 'disabled' : ''}>${j.gerando ? '<span class="girando"></span> Gerando…' : `${icone('play')} Ouvir`}</button>
-      ${j.ultimo ? audio(j.ultimo) : ''}<button class="bt" data-fn="usar" title="Todos os vídeos novos saem com esta voz">Usar esta voz nos vídeos</button></div>
-    ${d.testes.length ? `<h3>Testes anteriores</h3><div class="lista">${d.testes.map((x) => `<div class="linha-item"><div class="cresce"><b>${esc(MOTOR_ROTULO[x.motor] || x.motor)}</b><small>${esc(x.quando)} · ${x.duracao ?? '?'} s</small></div>${audio(x.arquivo)}</div>`).join('')}</div>` : ''}</div>
-  <h2>VoiceStudio</h2><div class="cartao">
-    <p><span class="chip ${m.voicestudio ? 'pronto' : 'parado'}"><i></i>${m.voicestudio ? 'aberto neste PC' : 'fechado ou não instalado'}</span></p>
+  const secoes = abas(j, [['gravar', 'Minha voz'], ['narracoes', 'Narrações', d.testes.length || ''], ['voicestudio', 'VoiceStudio']]);
+  const aviso = falta ? `<div class="faixa"><span>${!m.kokoro && !m.chatterbox ? 'A voz ainda não está instalada neste PC.' : `Falta instalar ${!m.kokoro ? 'o Kokoro' : 'o Chatterbox'}.`} Baixa uns 3 GB e precisa do Python 3.12.</span><button class="bt pri mini" data-acao="voz_instalar">Instalar agora</button></div>` : '';
+  const voicestudio = `<section class="painel"><div class="cab-gravacao"><h2>VoiceStudio</h2><span class="chip ${m.voicestudio ? 'pronto' : 'parado'}">${m.voicestudio ? 'aberto neste PC' : 'fechado ou não instalado'}</span></div>
     <p class="sub">Alternativa local ao ElevenLabs (clonagem, mais de 600 idiomas). Roda como programa separado (licença AGPL-3.0): o Ciello OS só usa o áudio que ele gera, pela API local dele.</p>
     ${m.voicestudio ? `<div class="acoes-linha"><button class="bt pri" data-fn="clonarVS" ${d.amostra.existe && !j.clonando ? '' : 'disabled'}>${j.clonando ? '<span class="girando"></span> Clonando…' : 'Clonar a minha gravação no VoiceStudio'}</button><small class="neutro">Na 1ª vez ele baixa o modelo (uns 2 GB).</small></div>`
-      : `<ol class="passos-vs"><li>Baixe o instalador para Windows em <a href="https://github.com/debpalash/VoiceStudio/releases" target="_blank" rel="noopener">github.com/debpalash/VoiceStudio/releases</a> e instale.</li><li>Abra o VoiceStudio e deixe aberto.</li><li>Volte aqui: este cartão fica verde e libera a clonagem.</li></ol>`}</div></div>`;
+      : `<ol class="passos-vs"><li>Baixe o instalador para Windows em <a href="https://github.com/debpalash/VoiceStudio/releases" target="_blank" rel="noopener">github.com/debpalash/VoiceStudio/releases</a> e instale.</li><li>Abra o VoiceStudio e deixe aberto.</li><li>Volte aqui: este cartão fica verde e libera a clonagem.</li></ol>`}</section>`;
+  const narracoes = d.testes.length ? `<div class="lista">${d.testes.map((x) => `<div class="linha-item"><div class="cresce"><b>${esc(MOTOR_ROTULO[x.motor] || x.motor)}</b><small>${esc(x.quando)} · ${x.duracao ?? '?'} s</small></div>${audio(x.arquivo)}</div>`).join('')}</div>`
+    : '<div class="vazio">Nenhuma narração de teste ainda. Em <b>Minha voz</b>, escreva uma frase em <b>Testar uma frase</b> e clique em <b>Ouvir</b>: cada teste fica guardado aqui.</div>';
+  // as vozes dos vídeos em cartões: a escolhida para o teste fica marcada; "em uso" é a que os vídeos usam hoje
+  const emUso = (motor, voz) => p.motor === motor && (motor !== 'kokoro' || p.voz === voz);
+  const cartaoVoz = (motor, voz, nomeV, desc) => { const on = t.motor === motor && (motor !== 'kokoro' || t.voz === voz);
+    return `<button class="voz-card ${on ? 'on' : ''}" data-fn="escolher" data-motor="${motor}" ${voz ? `data-voz="${esc(voz)}"` : ''} aria-pressed="${on}"><span class="cab-voz"><span class="avatar-ini">${esc(iniciais(nomeV))}</span><b>${esc(nomeV)}</b></span><small>${esc(desc)}${emUso(motor, voz) ? ' · em uso' : ''}</small></button>`; };
+  const vozes = [...d.vozes_kokoro.map(([v, r]) => { const [n, g] = r.replace(')', '').split(' ('); return cartaoVoz('kokoro', v, n, `${g ? g[0].toUpperCase() + g.slice(1) : 'Voz pronta'}${m.kokoro ? '' : ' (não instalada)'}`); }),
+    cartaoVoz('chatterbox', '', 'Minha voz', d.amostra.existe ? `Clonada da gravação${m.chatterbox ? '' : ' (indisponível)'}` : 'Grave primeiro'),
+    cartaoVoz('voicestudio', '', 'VoiceStudio', m.voicestudio ? `Voz ${t.perfil || p.perfil || 'padrão do app'}` : '(indisponível)')].join('');
+  const nomeTeste = t.motor === 'kokoro' ? ((d.vozes_kokoro.find((v) => v[0] === t.voz) || [t.voz, t.voz])[1].split(' (')[0]) : t.motor === 'chatterbox' ? 'a sua voz' : 'o VoiceStudio';
+  const minhaVoz = `<div class="estudio-voz"><div>
+    <section class="painel"><div class="cab-gravacao"><h2>Sua gravação</h2><span class="neutro">${d.amostra.existe ? `${d.amostra.duracao ?? '?'} s · salva ${esc(d.amostra.quando)}` : 'ainda não gravou'}</span></div>
+      <div class="caixa-onda"><div class="onda ${d.amostra.existe ? 'cheia' : ''}" role="img" aria-label="${d.amostra.existe ? 'Onda sonora da sua gravação' : 'Sem gravação ainda'}">${'<span></span>'.repeat(48)}</div>
+        <div class="acoes-linha">${d.amostra.existe ? audio('amostra.wav', 'Ouvir a gravação') : '<small class="neutro">A onda aparece aqui enquanto você grava.</small>'}<span class="nivel-mic" title="Nível do microfone: precisa se mexer enquanto você fala"><i></i></span><span class="tempo-gravacao neutro"></span>
+          <label class="bt mini">Enviar um áudio<input type="file" accept="audio/*" data-mudar="enviar" hidden></label></div></div>
+      <div class="texto-ler"><small>Leia este texto em voz alta${d.amostra.existe ? '' : ', num lugar silencioso, no seu ritmo normal (10 a 20 segundos)'}</small><p class="ler">${esc(TEXTO_GRAVAR)}</p></div>
+      <div class="campos-voz"><label>Microfone<select name="mic" data-mudar="mic"><option value="">o padrão do Windows</option></select></label></div>
+      <div class="gravar-linha"><button class="bt-gravar" data-fn="gravar" aria-label="${d.amostra.existe ? 'Gravar de novo' : 'Gravar'}" title="${d.amostra.existe ? 'Gravar de novo' : 'Gravar'}"><span></span></button>
+        <div class="rotulo-gravar"><b>${d.amostra.existe ? 'Gravar de novo' : 'Gravar'}</b><small>Fica só no seu PC (marca/minha-voz.wav, fora do GitHub)</small></div></div>
+    </section></div>
+    <div><section class="painel"><h2>Voz dos vídeos</h2><p class="sub" style="margin:8px 0 12px">Hoje os vídeos saem com <b>${esc(escolhida)}</b>.</p><div class="vozes">${vozes}</div></section>
+    <section class="painel"><h2><label for="teste-voz">Testar uma frase</label></h2>
+      ${t.motor === 'voicestudio' ? `<div class="campos-voz" style="margin-top:12px"><label>Voz no VoiceStudio${j.vozesVS ? `<select name="perfil" data-mudar="campo"><option value="">a padrão do app</option>${j.vozesVS.map((v) => `<option value="${esc(v.id)}" ${t.perfil === v.id ? 'selected' : ''}>${esc(v.nome || v.id)}</option>`).join('')}</select>` : `<button class="bt mini tom" data-fn="vozesVS" ${m.voicestudio ? '' : 'disabled'}>Carregar vozes</button>`}</label></div>` : ''}
+      ${t.motor === 'chatterbox' && !d.amostra.existe ? '<p class="ruim">O Chatterbox clona a partir da sua gravação: grave primeiro.</p>' : ''}
+      ${t.motor === 'chatterbox' ? '<p class="sub">No processador, a 1ª vez baixa o modelo (uns minutos) e cada frase leva de 20 s a 1 min.</p>' : ''}
+      <textarea id="teste-voz" name="texto" rows="3">${esc(t.texto)}</textarea>
+      <div class="acoes-linha"><button class="bt pri" data-fn="ouvir" ${j.gerando ? 'disabled' : ''}>${j.gerando ? '<span class="girando"></span> Gerando…' : `${icone('play')} Ouvir com ${esc(nomeTeste)}`}</button>
+        <button class="bt tom" data-fn="usar" title="Todos os vídeos novos saem com esta voz">Usar esta voz nos vídeos</button></div>
+      ${j.ultimo ? `<div class="acoes-linha" style="margin-top:12px">${audio(j.ultimo, 'Ouvir o teste')}</div>` : ''}
+      <small class="neutro" style="display:block;margin-top:10px">Motor: ${esc(MOTOR_ROTULO[t.motor] || t.motor)}</small></section></div></div>`;
+  j.corpo.innerHTML = `<div class="pagina">${secoes}${SEM_CLAUDE}${aviso}${j.aba === 'narracoes' ? `<h2 style="margin-top:4px">Narrações de teste</h2>${narracoes}` : j.aba === 'voicestudio' ? voicestudio : minhaVoz}</div>`;
+  if (j.aba === 'gravar' && d.amostra.existe) ondaDaGravacao(j, `/api/voz/arquivo/amostra.wav?t=${encodeURIComponent(d.amostra.quando)}`);
   preencherMics(j);
 }
 
@@ -1835,9 +2037,9 @@ async function renderVoz(j) {
 async function renderEquipe(j) {
   if (!equipeCache.length) await puxarEquipe();
   j.corpo.innerHTML = `<div class="pagina"><h1>Equipe</h1><p class="sub">${equipeCache.length} agentes. Clique em um para ver o que ele faz e o que está fazendo agora.</p>
-  <div class="grade2">${equipeCache.map((a) => { const s = estadoAgente(a.nome); return `<button class="cartao" data-abrir="agente:${esc(a.nome)}" style="display:flex;gap:12px;align-items:center;text-align:left;cursor:pointer">
-    <span class="avatar" style="width:52px;height:52px;border-radius:12px;background:#E9E0C8;display:grid;place-items:center;flex:none">${sprite(a.nome, 30)}</span>
-    <span style="min-width:0"><b>${esc(nome(a.nome))}</b> ${chipEstado(s.estado)}<small class="neutro" style="display:block;margin-top:3px;font-size:11.5px">${esc(s.estado !== 'parado' && s.tarefa ? s.tarefa : papel(a.descricao))}</small></span></button>`; }).join('')}</div></div>`;
+  <div class="grade2">${equipeCache.map((a) => { const s = estadoAgente(a.nome); return `<button class="cartao agente-card" data-abrir="agente:${esc(a.nome)}">
+    <span class="avatar">${sprite(a.nome, 30)}</span>
+    <span class="cresce"><b>${esc(nome(a.nome))}</b> ${chipEstado(s.estado)}<small class="neutro">${esc(s.estado !== 'parado' && s.tarefa ? s.tarefa : papel(a.descricao))}</small></span></button>`; }).join('')}</div></div>`;
 }
 async function renderAgente(j) {
   if (!equipeCache.length) await puxarEquipe();
@@ -1973,7 +2175,7 @@ async function detalhePost(j, q) {
   const etapas = `<div class="etapas-post">${ETAPAS_BIB.map((e) => `<span class="etapa-post ${q.etapas[e] ? 'feita' : q.proximo === e ? 'proxima' : ''}">${q.etapas[e] ? '✓ ' : ''}${ROT_ETAPA_BIB[e]}</span>`).join('<i>›</i>')}</div>`;
   const legenda = q.legenda ? `<pre class="texto-msg">${esc(q.legenda)}</pre><button class="bt mini" data-fn="copiarLegenda">Copiar legenda</button>`
     : '<p class="sub">Sem legenda ainda. Gere na janela Conteúdo, em Produção.</p>';
-  const audios = q.audios.length ? q.audios.map((a) => `<div class="audio-linha-bib"><small>${esc(a.grupo)} · ${tamanho(a.tamanho)}</small><audio controls preload="none" src="${urlBib(a.rel)}"></audio></div>`).join('') : `<p class="sub">${q.etapas.narracao ? 'A narração já está dentro do vídeo final.' : 'Sem narração ainda.'}</p>`;
+  const audios = q.audios.length ? q.audios.map((a) => `<div class="audio-linha-bib"><small>${esc(a.grupo)} · ${tamanho(a.tamanho)}</small>${tocador(urlBib(a.rel), 'Ouvir a narração')}</div>`).join('') : `<p class="sub">${q.etapas.narracao ? 'A narração já está dentro do vídeo final.' : 'Sem narração ainda.'}</p>`;
   return `<div class="detalhe-bib">
     <div class="midia-bib">${versoes}${player}${v ? `<div class="acoes-linha"><small class="neutro">${esc(v.nome)} · ${tamanho(v.tamanho)}</small><button class="bt mini" data-fn="pasta" data-rel="${esc(v.rel)}">Mostrar na pasta</button></div>` : ''}</div>
     <div class="painel-bib">
@@ -2035,7 +2237,7 @@ async function renderBiblioteca(j) {
         <figcaption><b>${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
     } else if (j.aba === 'vozes') {
       corpo = `<div class="lista">${itens.map((x) => `<div class="linha-item audio-bib"><div class="cresce"><b>${esc(x.titulo)}</b>${meta(x)}${x.tamanho < 20000 ? '<small class="alerta-bib">Quase vazio: a gravação pode não ter captado o microfone.</small>' : ''}</div>
-        <audio controls preload="none" src="${urlBib(x.rel)}"></audio>${botaoPasta(x)}</div>`).join('')}</div>`;
+        ${tocador(urlBib(x.rel), 'Ouvir a gravação')}${botaoPasta(x)}</div>`).join('')}</div>`;
     } else {
       if (sel && j.texto?.rel !== sel.rel) { const t = await api(`/api/biblioteca/texto/${urlRel(sel.rel)}`); j.texto = { rel: sel.rel, ...t }; }
       const txt = !j.texto?.ok ? '<div class="vazio">Não deu para abrir este arquivo.</div>' : j.texto.tipo === 'json' ? roteiroLegivel(j.texto.texto) : `<div class="md">${md(j.texto.texto)}</div>`;
