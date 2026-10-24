@@ -819,3 +819,30 @@ table.cal tr.passado td { opacity: .6; }
 .lista + .sub, .acoes + .sub, .kanban + .sub, .grade2 + .sub, .painel + .sub, .cartao + .sub, table + .sub { margin-top: 14px; } /* nota de rodapé longe do que vem antes */
 /* as telas de duas colunas empilham quando a JANELA fica estreita (não só a tela do PC) */
 @container janela (max-width: 860px) { .atendimento, .estudio-voz, .lista-detalhe { grid-template-columns: 1fr; } .detalhe-pauta { position: static; } }
+
+/* Conexões: a conferência do Metricool feita pelos agentes (central/metricool_conferir.py) */
+.metricool-conf { margin: 16px 0 8px; } .metricool-conf.alerta { background: var(--erro-fundo); color: var(--erro-texto); }
+.metricool-conf .acoes-linha { flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* Biblioteca: concorrentes, nichos e referências (central/pesquisa.py) */
+.cab-pesquisa { margin: 4px 0 16px; }
+.grade-pesquisa { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 8px; }
+.cartao-pesquisa { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--cartao); border-radius: var(--r-cartao); box-shadow: var(--sombra-cartao); min-width: 0; }
+.cartao-pesquisa header { display: flex; align-items: center; gap: 10px; } .cartao-pesquisa header > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cartao-pesquisa header b { font-size: 14px; font-weight: 650; } .cartao-pesquisa header small { font-size: 12.5px; color: var(--texto-2); }
+.cartao-pesquisa p { margin: 0; font-size: 13px; line-height: 1.5; user-select: text; } .cartao-pesquisa p small { display: block; font-size: 12px; font-weight: 650; color: var(--app); }
+.cartao-pesquisa footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; } .cartao-pesquisa a { color: var(--app); }
+.avatar-bib { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font: 700 15px var(--fonte); color: var(--app-on); background: var(--app-container); }
+.links-bib { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px; } .links-bib li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prioridade-bib { display: inline-flex; gap: 3px; } .prioridade-bib i { width: 14px; height: 6px; border-radius: 3px; background: var(--contorno-suave); } .prioridade-bib i.on { background: var(--app); }
+.grade-pilares { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.pilar-bib { padding: 14px 16px; border-radius: var(--r-cartao); background: var(--app-suave); display: flex; flex-direction: column; gap: 4px; }
+.pilar-bib b { font-size: 14px; color: var(--app-on); } .pilar-bib small { font-size: 12.5px; color: var(--texto-2); }
+.cab-nichos { margin-top: 24px; align-items: flex-end; } .cab-nichos h2 { margin-top: 0; }
+.lista-refs { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 8px; }
+.ref-bib { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; background: var(--cartao); border-radius: var(--r-cartao); box-shadow: var(--sombra-cartao); }
+.ref-bib .cresce { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; } .ref-bib .cresce > b { font-size: 14px; font-weight: 650; } .ref-bib .cresce > small { font-size: 12.5px; color: var(--texto-2); }
+.ref-bib p { margin: 2px 0 0; font-size: 13px; color: var(--texto-2); user-select: text; } .ref-bib > a { color: var(--app); font-weight: 650; font-size: 13px; white-space: nowrap; }
+.views-bib { flex: none; width: 64px; text-align: center; padding: 8px 0; border-radius: 16px; background: var(--app-container); }
+.views-bib b { display: block; font: 700 16px/1.2 var(--fonte); color: var(--app-on); } .views-bib small { font-size: 11px; color: var(--app-on); }
+.chips-ref { display: flex; flex-wrap: wrap; gap: 6px; }
