@@ -1704,6 +1704,15 @@ async function acompanhar(id, aoTerminar) {
   }
   return null;
 }
+// o microfone escolhido fica guardado neste navegador (o Windows pode ter vários: headset, webcam, "Mixagem estéreo"...)
+const lerMic = () => { try { return localStorage.getItem('ciello-mic') || ''; } catch { return ''; } };
+const gravarMic = (id) => { try { localStorage.setItem('ciello-mic', id); } catch { /* sem armazenamento */ } };
+async function preencherMics(j) {
+  const sel = $('[name=mic]', j.corpo); if (!sel || !navigator.mediaDevices?.enumerateDevices) return;
+  const mics = (await navigator.mediaDevices.enumerateDevices()).filter((x) => x.kind === 'audioinput' && x.deviceId !== 'default' && x.deviceId !== 'communications');
+  const atual = lerMic();
+  sel.innerHTML = '<option value="">o padrão do Windows</option>' + mics.map((x, i) => `<option value="${esc(x.deviceId)}" ${x.deviceId === atual ? 'selected' : ''}>${esc(x.label || `Microfone ${i + 1}`)}</option>`).join('');
+}
 async function renderVoz(j) {
   const d = await api('/api/app/voz'); const p = d.preferencia; const m = d.motores;
   j.teste = j.teste || { motor: p.motor === 'teste' ? 'kokoro' : p.motor, voz: p.voz, perfil: p.perfil, texto: d.texto_padrao };
@@ -1713,22 +1722,40 @@ async function renderVoz(j) {
   j.fns = {
     gravar: async (_, el) => {
       if (j.gravador) { j.gravador.stop(); return; }
-      let fluxo; try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true } }); }
-      catch { aviso({ titulo: 'Microfone bloqueado', texto: 'Permita o microfone para o Ciello OS (ícone de cadeado na barra do navegador).', cor: '#C8442F' }); return; }
+      const micId = lerMic();
+      let fluxo; try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: micId ? { exact: micId } : undefined, echoCancellation: false, noiseSuppression: true } }); }
+      catch (e) {
+        const semMic = e && (e.name === 'NotFoundError' || e.name === 'OverconstrainedError');
+        if (semMic && micId) gravarMic('');
+        aviso({ titulo: semMic ? 'Microfone não encontrado' : 'Microfone bloqueado', texto: semMic ? 'Escolha outro microfone na lista e grave de novo.' : 'Permita o microfone para o Ciello OS (ícone de cadeado na barra do navegador).', cor: '#C8442F' }); desenhar(j, true); return;
+      }
+      preencherMics(j);
+      // medidor de nível: mostra se o microfone escolhido está captando antes de você gastar 20 s lendo
+      const ctx = new AudioContext(); const an = ctx.createAnalyser(); an.fftSize = 1024; ctx.createMediaStreamSource(fluxo).connect(an);
+      const amostra = new Float32Array(an.fftSize); let pico = 0;
       const partes = []; const g = new MediaRecorder(fluxo); j.gravador = g; const inicio = Date.now();
-      g.ondataavailable = (e) => partes.push(e.data);
+      g.ondataavailable = (e) => { if (e.data && e.data.size) partes.push(e.data); };
       el.innerHTML = '■ Parar'; el.classList.add('gravando');
-      const relogioGravacao = setInterval(() => { $('.tempo-gravacao', j.corpo).textContent = `${Math.round((Date.now() - inicio) / 1000)} s`; }, 250);
+      const medidor = $('.nivel-mic i', j.corpo);
+      const relogioGravacao = setInterval(() => {
+        an.getFloatTimeDomainData(amostra); let n = 0; for (const v of amostra) n = Math.max(n, Math.abs(v)); pico = Math.max(pico, n);
+        if (medidor) medidor.style.width = `${Math.min(100, Math.round(n * 140))}%`;
+        $('.tempo-gravacao', j.corpo).textContent = `${Math.round((Date.now() - inicio) / 1000)} s`;
+      }, 100);
       g.onstop = async () => {
-        clearInterval(relogioGravacao); fluxo.getTracks().forEach((x) => x.stop()); j.gravador = null;
+        clearInterval(relogioGravacao); fluxo.getTracks().forEach((x) => x.stop()); ctx.close(); j.gravador = null;
+        const segundos = (Date.now() - inicio) / 1000;
+        if (segundos < 3) { aviso({ titulo: 'Gravação curta demais', texto: `Ficou com ${segundos.toFixed(1)} s. Clique em Gravar, leia o texto inteiro (10 a 20 s) e só então clique em Parar.`, cor: '#C8442F' }); desenhar(j, true); return; }
+        if (pico < 0.02) { aviso({ titulo: 'O microfone não captou som', texto: 'A gravação ficou muda. Escolha outro microfone na lista e confira o medidor antes de ler o texto.', cor: '#C8442F' }); desenhar(j, true); return; }
         const blob = new Blob(partes, { type: g.mimeType || 'audio/webm' });
         const ext = (g.mimeType || '').includes('ogg') ? 'ogg' : 'webm';
         const r = await enviarArquivo('voz', new File([blob], `gravacao.${ext}`));
         aviso({ titulo: r.ok ? 'Voz gravada' : 'Não salvou', texto: r.saida, cor: r.ok ? '#1F8A4C' : '#C8442F' });
         desenhar(j, true);
       };
-      g.start();
+      g.start(250);
     },
+    mic: (_, el) => { gravarMic(el.value); },
     enviar: async (_, el) => { const f = el.files[0]; if (!f) return; const r = await enviarArquivo('voz', f); aviso({ titulo: r.ok ? 'Voz salva' : 'Não salvou', texto: r.saida, cor: r.ok ? '#1F8A4C' : '#C8442F' }); desenhar(j, true); },
     campo: (_, el) => { t[el.name] = el.value; if (el.name === 'motor') { el.blur(); desenhar(j, true); } },
     ouvir: async () => {
@@ -1756,7 +1783,8 @@ async function renderVoz(j) {
   <h2>1. Sua voz</h2><div class="cartao">
     ${d.amostra.existe ? `<p><b>Gravação salva</b> · ${d.amostra.duracao ?? '?'} s · ${esc(d.amostra.quando)}</p>${audio('amostra.wav')}` : '<p>Ainda não tem gravação. Leia o texto abaixo em voz alta, num lugar silencioso, no seu ritmo normal (de 10 a 20 segundos).</p>'}
     <blockquote class="ler">${esc(TEXTO_GRAVAR)}</blockquote>
-    <div class="acoes-linha"><button class="bt pri" data-fn="gravar">● ${d.amostra.existe ? 'Gravar de novo' : 'Gravar'}</button><span class="tempo-gravacao neutro"></span>
+    <div class="campos-voz"><label>Microfone<select name="mic" data-mudar="mic"><option value="">o padrão do Windows</option></select></label></div>
+    <div class="acoes-linha"><button class="bt pri" data-fn="gravar">● ${d.amostra.existe ? 'Gravar de novo' : 'Gravar'}</button><span class="nivel-mic" title="Nível do microfone: precisa se mexer enquanto você fala"><i></i></span><span class="tempo-gravacao neutro"></span>
       <label class="bt">Enviar um áudio<input type="file" accept="audio/*" data-mudar="enviar" hidden></label></div>
     <small class="neutro">A gravação fica só no seu PC (marca/minha-voz.wav, fora do GitHub).</small></div>
   <h2>2. Testar</h2><div class="cartao">
@@ -1774,6 +1802,7 @@ async function renderVoz(j) {
     <p class="sub">Alternativa local ao ElevenLabs (clonagem, mais de 600 idiomas). Roda como programa separado (licença AGPL-3.0): o Ciello OS só usa o áudio que ele gera, pela API local dele.</p>
     ${m.voicestudio ? `<div class="acoes-linha"><button class="bt pri" data-fn="clonarVS" ${d.amostra.existe && !j.clonando ? '' : 'disabled'}>${j.clonando ? '<span class="girando"></span> Clonando…' : 'Clonar a minha gravação no VoiceStudio'}</button><small class="neutro">Na 1ª vez ele baixa o modelo (uns 2 GB).</small></div>`
       : `<ol class="passos-vs"><li>Baixe o instalador para Windows em <a href="https://github.com/debpalash/VoiceStudio/releases" target="_blank" rel="noopener">github.com/debpalash/VoiceStudio/releases</a> e instale.</li><li>Abra o VoiceStudio e deixe aberto.</li><li>Volte aqui: este cartão fica verde e libera a clonagem.</li></ol>`}</div></div>`;
+  preencherMics(j);
 }
 
 // ------------------------------------------------------------------ apps: equipe, agente e atividade

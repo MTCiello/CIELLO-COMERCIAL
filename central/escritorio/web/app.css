@@ -548,3 +548,6 @@ table.cal tr.passado td { opacity: .6; }
 .cab-bib small { font-size: 12px; color: var(--cinza); }
 .cena-bib { padding: 10px 0; border-bottom: 1px solid var(--linha); } .cena-bib small { font-size: 11.5px; font-weight: 600; color: var(--cinza); text-transform: uppercase; letter-spacing: .4px; }
 .cena-bib p { margin: 4px 0 0; line-height: 1.5; } .cena-bib.legenda { border-bottom: 0; background: var(--suave); padding: 12px; border-radius: var(--r-linha); margin-top: 8px; }
+/* Estúdio de Voz: medidor de nível do microfone enquanto grava */
+.nivel-mic { width: 120px; height: 8px; border-radius: 4px; background: rgba(29, 27, 24, .1); overflow: hidden; align-self: center; }
+.nivel-mic i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #1F8A4C, #E0A81C 75%, #C8442F); transition: width .08s linear; }
