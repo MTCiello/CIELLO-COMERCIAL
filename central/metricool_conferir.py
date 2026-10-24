@@ -7,9 +7,10 @@ Claude (conector), então o agente chama `getBrandSettings`, salva a resposta e 
     python central/metricool_conferir.py estado/metricool-marcas.json     confere e grava estado/metricool.json
     python central/metricool_conferir.py --sem-conector                   o Claude não achou o conector do Metricool
     python central/metricool_conferir.py estado                           a última conferência (e se está velha)
+    python central/metricool_conferir.py --pelo-claude                    pede ao Claude (sem janela) para conferir agora
 
 Sai com código 0 quando está tudo certo e 2 quando falta algo: o agente para e avisa o que está desconectado.
-Cada marca do Metricool é um perfil (a CIELLO é uma marca; outro cliente seria outra).
+Cada marca do Metricool é um perfil (a sua empresa é uma marca; um cliente atendido seria outra).
 """
 from __future__ import annotations
 
@@ -124,6 +125,21 @@ def problema() -> dict | None:
     return None
 
 
+def pelo_claude() -> dict:
+    """O botão "Conferir agora" da janela Conexões: o Claude chama o conector e roda este script."""
+    import ia
+    antes = ultima().get("quando")
+    pedido = ("Confira o Metricool: chame getBrandSettings no conector do Metricool, salve a resposta inteira (JSON) em "
+              "estado/metricool-marcas.json e rode python central/metricool_conferir.py estado/metricool-marcas.json. "
+              "Se o conector do Metricool não estiver disponível, rode python central/metricool_conferir.py --sem-conector. "
+              "Não faça mais nada. Responda só a linha que o script imprimiu.")
+    r = ia.rodar(pedido, "Conferir o Metricool", timeout=300)
+    depois = ultima()
+    if depois.get("quando") == antes:  # o Claude não chegou a rodar o script
+        return {"ok": False, "quando": agora(), "mensagem": f"o Claude não conseguiu conferir: {r['saida'][-200:]}", "faltam": []}
+    return depois
+
+
 def texto(r: dict) -> str:
     if r.get("ok") is None:
         return "Metricool ainda não conferido."
@@ -147,6 +163,8 @@ def main():
         del args[i:i + 2]
     if args == ["--sem-conector"]:
         r = sem_conector()
+    elif args == ["--pelo-claude"]:
+        r = pelo_claude()
     elif args == ["estado"]:
         r = ultima()
         print(texto(r) + (" (conferência de mais de 24 h: confira de novo)" if r.get("velha") and r.get("ok") is not None else ""))

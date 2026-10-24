@@ -30,6 +30,7 @@ import conexoes  # noqa: E402
 import conteudo  # noqa: E402
 import dados  # noqa: E402
 import ia  # noqa: E402
+import metricool_conferir  # noqa: E402
 import social  # noqa: E402
 import status  # noqa: E402
 from provedores import PROVEDORES  # noqa: E402
@@ -197,6 +198,8 @@ def publicar_fila(con, c, agora: dt.datetime) -> dict:
     feitos = {"enviados": 0, "esperando": 0, "erros": 0}
     cal = calendario.config()
     caidas = {x["id"] for x in conexoes.caidas()}
+    mc = metricool_conferir.ultima()
+    fora_metricool = set(mc.get("faltam") or []) if mc.get("ok") is False else set()  # redes que a última conferência achou desconectadas
     mes_atual = agora.strftime("%Y-%m")
     usados_metricool = con.execute("SELECT COUNT(*) FROM envios WHERE via IN ('claude','metricool') AND estado IN ('agendado','publicado') "
                                    "AND substr(quando,1,7)=?", (mes_atual,)).fetchone()[0]
@@ -230,6 +233,10 @@ def publicar_fila(con, c, agora: dt.datetime) -> dict:
                 continue
             if info["via"] in caidas:
                 _salvar_envio(con, p["post"], rede, estado="na_fila", quando=quando, via=info["via"], erro=f"{prov.NOME} fora do ar: espera a conexão voltar")
+                continue
+            if info["via"] in ("claude", "metricool") and rede in fora_metricool:
+                _salvar_envio(con, p["post"], rede, estado="na_fila", quando=quando, via=info["via"],
+                              erro=f"{conexoes.REDES[rede]} desconectado no Metricool: reconecte lá e confira de novo em Conexões")
                 continue
             if info["via"] in ("claude", "metricool") and cal["limite_metricool"] and usados_metricool >= cal["limite_metricool"]:
                 _salvar_envio(con, p["post"], rede, estado="na_fila", quando=quando, via=info["via"], erro="limite de posts do Metricool no mês")
