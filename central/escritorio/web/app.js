@@ -650,7 +650,7 @@ async function copiar(texto) {
 
 /* Diálogo dentro da janela. campos: [{ nome, rotulo, tipo: texto|numero|data|mes|escolha|area|sim|arquivo|marcar, opcoes, valor, dica, obrigatorio, meia }]
    enviar(dados) devolve { ok, saida }; o resultado aparece no próprio diálogo (com os links clicáveis). */
-function dialogo(j, { titulo, texto = '', campos = [], botao = 'Salvar', enviar, extra = '' }) {
+function dialogo(j, { titulo, texto = '', campos = [], botao = 'Salvar', enviar, extra = '', depois = null }) {
   $('.dialogo', j.el)?.remove();
   const el = document.createElement('div'); el.className = 'dialogo';
   const campo = (c) => {
@@ -688,8 +688,8 @@ function dialogo(j, { titulo, texto = '', campos = [], botao = 'Salvar', enviar,
     const r = await enviar(dados, form);
     b.disabled = false; b.textContent = botao;
     res.hidden = false; res.className = `resultado ${r.ok ? 'ok' : 'erro'}`;
-    res.innerHTML = `<pre>${linkar(r.saida || (r.ok ? 'Pronto.' : 'Não deu certo.'))}</pre>`;
-    if (r.ok) { $('.cancelar', el).textContent = 'Fechar'; b.style.display = 'none'; }
+    res.innerHTML = r.html || `<pre>${linkar(r.saida || (r.ok ? 'Pronto.' : 'Não deu certo.'))}</pre>`;
+    if (r.ok) { $('.cancelar', el).textContent = 'Fechar'; b.style.display = 'none'; depois?.(r, el); }
   };
   setTimeout(() => form.querySelector('input:not([type=checkbox]),select,textarea')?.focus(), 30);
   return el;
@@ -1505,7 +1505,33 @@ async function renderVideo(j) {
         { nome: 'gancho', rotulo: 'Gancho (a 1ª frase, até 9 palavras)', obrigatorio: true, exemplo: 'Três comandos do ChatGPT que respondem cliente por você' },
         { nome: 'itens', rotulo: 'Itens (um por linha, 2 a 4)', tipo: 'area', obrigatorio: true, exemplo: 'Primeiro: responda como atendente da minha loja…\nSegundo: transforme a conversa em orçamento…' },
         { nome: 'cta', rotulo: 'Chamada final', valor: 'Salva pra testar depois e me chama no direct.' }],
-      botao: 'Criar roteiro', enviar: async (x) => { const r = await operar('video_roteiro', x); if (r.ok) desenhar(j, true); return r; } }),
+      botao: 'Criar roteiro',
+      enviar: async (x) => {
+        const r = await operar('video_roteiro', x);
+        if (!r.ok) return r;
+        desenhar(j, true);
+        return { ...r, html: `<p><b>Roteiro criado.</b> Ele já está na lista do Estúdio e na Biblioteca.</p><ol class="cenas-novo">${(r.cenas || []).map((c) => `<li>${esc(c)}</li>`).join('')}</ol>` };
+      },
+      depois: (r, el) => {
+        const pe = $('footer', el);
+        const bt = (rotulo, pri, acao) => { const b = document.createElement('button'); b.type = 'button'; b.className = `bt${pri ? ' pri' : ''}`; b.textContent = rotulo; b.onclick = () => { el.remove(); acao(); }; pe.appendChild(b); };
+        bt('Melhorar com o roteirista', false, () => j.fns.roteirista({ post: r.post }));
+        bt('Gerar o vídeo', true, () => j.fns.gerar({ post: r.post }));
+      } }),
+    roteirista: async ({ post } = {}) => {
+      const pedir = async (x) => {
+        const r = await operar('video_roteirista', { ...x, post: post || '' });
+        if (!r.ok) return r;
+        abrirTerminal({ prompt: r.prompt, titulo: 'Roteirista' });
+        return { ok: true, saida: 'O roteirista começou no terminal. Ele mostra o roteiro para você revisar antes de qualquer vídeo.' };
+      };
+      if (post) { const r = await pedir({}); if (!r.ok) aviso({ titulo: 'Não deu', texto: r.saida, cor: '#C8442F' }); return; }
+      dialogo(j, { titulo: 'Roteiro com o roteirista', texto: 'O agente roteirista escreve o roteiro no Claude Code e mostra para você revisar. Nada é narrado, gerado ou publicado sem você.',
+        campos: [{ nome: 'data', rotulo: 'Data do post', tipo: 'escolha', opcoes: d.proximos.map((x) => [x, `${ddmm(x)} (próximo horário livre)`]), meia: true },
+          { nome: 'pilar', rotulo: 'Pilar', tipo: 'escolha', opcoes: [['comandos', 'Comandos'], ['lancamentos', 'Lançamentos'], ['repositorios', 'Repositórios'], ['economizar', 'Economizar'], ['negocio', 'Negócio / CRM']], meia: true },
+          { nome: 'tema', rotulo: 'Tema do vídeo', tipo: 'area', obrigatorio: true, exemplo: 'Como responder cliente no WhatsApp em 1 minuto com IA' }],
+        botao: 'Pedir ao roteirista', enviar: pedir });
+    },
     gerar: async ({ post, rascunho }) => {
       silenciar('produtor-video', true);
       const r = await operar('video_gerar', { post, modelo: j.modelo, rascunho: rascunho === '1' });
@@ -1577,7 +1603,7 @@ async function renderVideo(j) {
   };
   j.corpo.innerHTML = `<div class="pagina">${secoes}<h1>Estúdio de Vídeo</h1><p class="sub">Roteiro → narração com a voz do Estúdio de Voz (agora: <b>${esc(d.voz)}</b>) → vídeo com a marca da empresa, legenda e trilha. Feito no seu PC com o HyperFrames.</p>${SEM_CLAUDE}
     ${d.hyperframes ? '' : '<div class="faixa"><span>O motor de vídeo (HyperFrames) ainda não está instalado. Rode o <b>instalar.cmd</b> de novo: ele instala em reels/.</span></div>'}
-    <div class="acoes topo"><button class="bt pri" data-fn="novo">+ Novo roteiro</button><button class="bt" data-fn="aba" data-aba="estilos">Galeria de estilos</button><button class="bt" data-abrir="voz">Estúdio de Voz</button><button class="bt" data-abrir="objetivos" title="Os agentes escrevem os roteiros">Pedir roteiros à equipe</button></div>
+    <div class="acoes topo"><button class="bt pri" data-fn="novo">+ Novo roteiro</button><button class="bt" data-fn="roteirista" title="O agente roteirista escreve a partir de um tema">Roteiro com o roteirista</button><button class="bt" data-fn="aba" data-aba="estilos">Galeria de estilos</button><button class="bt" data-abrir="voz">Estúdio de Voz</button><button class="bt" data-abrir="objetivos" title="Os agentes escrevem os roteiros">Pedir roteiros à equipe</button></div>
     <h2>Modelo rápido</h2><div class="modelos">${Object.entries(m).map(([k, x]) => `<button class="modelo ${j.modelo === k ? 'on' : ''}" data-fn="modelo" data-m="${k}"><span class="amostra" style="background:${x.fundo}"><i style="color:${x.texto}">Título</i><i style="color:${x.ouro}">em destaque</i></span><b>${esc(x.nome)}</b><small>${esc(x.descricao)}</small></button>`).join('')}
       <button class="modelo" data-fn="aba" data-aba="estilos"><span class="amostra mosaico">${E.opus98.filter((x) => x.imagem).slice(0, 4).map((x) => `<img src="${esc(x.imagem)}" alt="" loading="lazy">`).join('')}</span><b>Mais ${E.opus98.length + E.biblioteca.length} estilos</b><small>Opus 98 e a biblioteca: o Claude produz o vídeo no estilo que você escolher</small></button></div>
     <h2>Roteiros</h2><div class="quadro-posts">${d.posts.map(cartao).join('') || '<div class="vazio">Nenhum roteiro. Clique em <b>+ Novo roteiro</b>.</div>'}</div></div>`;

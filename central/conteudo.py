@@ -217,7 +217,27 @@ def novo_roteiro(data: str, gancho: str, itens: list[str], cta: str = "", pilar:
                "scenes": [{"type": "hook", "say": gancho}] + [{"type": "item", "say": i} for i in itens] + [{"type": "cta", "say": cta}]}
     ROTEIROS.mkdir(parents=True, exist_ok=True)
     arq.write_text(json.dumps(roteiro, ensure_ascii=False, indent=1), encoding="utf-8")
-    return {"ok": True, "saida": f"roteiro {nome} criado", "post": nome}
+    return {"ok": True, "saida": f"roteiro {nome} criado", "post": nome, "cenas": [c["say"] for c in roteiro["scenes"]]}
+
+
+def pedido_roteirista(empresa: str, tema: str = "", data: str = "", pilar: str = "", post: str = "") -> str:
+    """O pedido que vai para o Claude Code quando você pede o roteiro ao roteirista (novo, ou melhorar um escrito à mão)."""
+    if post:
+        alvo = (f"Melhore o roteiro roteiros/{post}.json, que eu escrevi à mão no Estúdio de Vídeo. Mantenha a ideia e o nome do arquivo; "
+                "ajuste o gancho, a fala de cada cena, a capa (`capa.linhas`) e a chamada.")
+    else:
+        alvo = (f"Escreva um roteiro de reel sobre: {tema}\nSalve em roteiros/{data or 'AAAA-MM-DD'}-<slug>.json"
+                + (f" (pilar {pilar})" if pilar else "") + ".")
+    return f"""{alvo}
+
+Delegue ao agente roteirista com a ferramenta Task (descrição começando com "roteirista:"), para ele aparecer trabalhando no escritório. Passe a ele este pedido inteiro.
+
+Regras:
+- Formato do AGENTE.md e dos outros arquivos em roteiros/: gancho de até 9 palavras, 2 a 4 itens, CTA com "Salva pra testar depois", campo `say` em cada cena, 18–28 s.
+- Fala coloquial, para a {empresa}. Fato sobre produto só com fonte oficial no campo `fontes`.
+- Não narre, não gere vídeo, não agende e não publique nada: só o roteiro.
+
+No fim, me mostre o gancho e a fala de cada cena em lista, para eu revisar. O roteiro aparece no Estúdio de Vídeo e na Biblioteca do Ciello OS."""
 
 
 def main():

@@ -467,6 +467,15 @@ def operar(op, dados):
         itens = dados.get("itens")
         itens = itens if isinstance(itens, list) else str(itens or "").split("\n")
         return conteudo.novo_roteiro(dados.get("data"), dados.get("gancho"), itens, dados.get("cta"), str(dados.get("pilar") or "")[:40])
+    if op == "video_roteirista":
+        post, tema = str(dados.get("post") or ""), str(dados.get("tema") or "").strip()[:300]
+        if post and not (re.fullmatch(r"20\d\d-\d\d-\d\d-[\w\-]{1,80}", post) and (RAIZ / "roteiros" / f"{post}.json").exists()):
+            return {"ok": False, "saida": "roteiro não encontrado"}
+        if not post and not tema:
+            return {"ok": False, "saida": "escreva o tema do roteiro"}
+        prompt = conteudo.pedido_roteirista(empresa.perfil().get("nome") or "empresa", tema, str(dados.get("data") or "")[:10],
+                                            str(dados.get("pilar") or "")[:40], post)
+        return {"ok": True, "saida": "", "prompt": prompt}
     if op == "video_estilo":
         post, estilo, tema = str(dados.get("post") or ""), str(dados.get("estilo") or ""), str(dados.get("tema") or "").strip()[:300]
         if not estilos.achar(estilo) or not (tema or (re.fullmatch(r"20\d\d-\d\d-\d\d-[\w\-]{1,80}", post) and (RAIZ / "roteiros" / f"{post}.json").exists())):
