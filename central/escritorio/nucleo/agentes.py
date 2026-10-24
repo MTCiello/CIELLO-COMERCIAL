@@ -227,6 +227,7 @@ class Loja:
         self.ouvintes = []
         self.gravar_agentes = gravar
         self.qtd_paletas = PALETAS
+        self.filtro = None  # fachada.Fachada.traduzir: o que sai para as telas (None: tudo, como no original)
 
     def __iter__(self):
         return iter(list(self.agentes.items()))
@@ -264,8 +265,9 @@ class Loja:
 
     def transmitir(self, msg):
         msg = limpar(msg)
-        for ouvinte in list(self.ouvintes):
-            ouvinte(msg)
+        for m in (self.filtro(msg) if self.filtro else [msg]):
+            for ouvinte in list(self.ouvintes):
+                ouvinte(m)
 
     def gravar(self):
         if self.gravar_agentes:

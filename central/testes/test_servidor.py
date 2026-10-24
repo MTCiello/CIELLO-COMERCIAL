@@ -177,11 +177,17 @@ class TesteEscritorio(unittest.TestCase):
         arq = self.pasta / "cccccccc-1111-2222-3333-444444444444.jsonl"
         arq.write_text(json.dumps({"type": "assistant", "message": {"content": [
             {"type": "tool_use", "id": "t1", "name": "Grep", "input": {}}]}}) + "\n", encoding="utf-8")
-        vistos = {}
-        while not {"agentCreated", "agentToolStart"} <= set(vistos):
+        # a sessão nova não vira boneco: o que ela faz aparece no Gerente, que é quem coordena
+        criados = []
+        while True:
             m = ws_ler(leitor)
-            vistos[m["type"]] = m
-        self.assertEqual(vistos["agentToolStart"]["status"], "Searching code")
+            if m["type"] == "agentCreated":
+                criados.append(m["id"])
+            if m["type"] == "agentToolStart":
+                break
+        self.assertEqual(m["status"], "Searching code")
+        self.assertEqual(m["id"], self.sala.residentes.ids["gerente"])
+        self.assertEqual(criados, [])
         s_.close()
 
     def test_tela_sem_token_so_olha(self):
