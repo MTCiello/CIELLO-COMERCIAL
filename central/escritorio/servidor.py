@@ -49,6 +49,7 @@ import status  # noqa: E402
 import atendimento  # noqa: E402
 import biblioteca  # noqa: E402
 import briefing  # noqa: E402
+import pesquisa  # noqa: E402
 import calendario  # noqa: E402
 import conexoes  # noqa: E402
 import carteira  # noqa: E402
@@ -108,6 +109,7 @@ ACOES = {
     "verificar": ("Verificação do assistente", "sistema", ["central/verificar.py", "--rapido"]),
     "piloto": ("Rodada do piloto automático", "postagem", ["central/piloto.py", "rodar"]),
     "sincronizar": ("Sincronizar as redes", "analista", ["central/social.py", "sincronizar"]),
+    "metricool_conferir": ("Conferir o Metricool", "postagem", ["central/metricool_conferir.py", "--pelo-claude"]),
     "atualizacao_verificar": ("Procurar atualizações do Ciello OS", "sistema", ["instalador/atualizacao.py", "verificar"]),
     "atualizacao_aplicar": ("Atualizar o Ciello OS", "sistema", ["instalador/atualizacao.py", "aplicar"]),
     "voz_instalar": ("Instalar a voz (Kokoro e Chatterbox, uns 3 GB)", "produtor-video", ["-m", "pip", "install", "-r", "central/requirements-voz.txt"]),
@@ -398,7 +400,7 @@ def salvar_empresa(dados):
 APPS = {"escritorio": app_escritorio, "conexoes": app_conexoes, "redes": app_redes, "rumo": app_rumo, "voz": estudio_voz.estado, "video": app_video, "atendimento": app_atendimento, "plano": plano.para_janela, "briefing": app_briefing, "financeiro": app_financeiro, "comercial": app_comercial,
         "conteudo": app_conteudo, "concorrentes": app_concorrentes, "tendencias": app_tendencias,
         "anuncios": lambda: {"campanhas": campanhas(), "resumo": kpis()["anuncios"]}, "atualizacoes": atualizacao.resumo_status,
-        "dados": app_dados, "biblioteca": biblioteca.listar}
+        "dados": app_dados, "biblioteca": lambda: {**biblioteca.listar(), "pesquisa": pesquisa.listar()}}
 
 
 # ---------------------------------------------------------------- execução das ações
@@ -442,6 +444,12 @@ def executar(rotulo, agente, args, acao="tarefa"):
 def operar(op, dados):
     if op == "biblioteca_mostrar":
         return biblioteca.mostrar(str(dados.get("rel") or ""))
+    if op == "pesquisa_concorrente":
+        return pesquisa.salvar_concorrente(dados)
+    if op == "pesquisa_nicho":
+        return pesquisa.salvar_nicho(dados)
+    if op == "pesquisa_referencia":
+        return pesquisa.salvar_referencia(dados)
     if op == "voz_testar":
         try:
             args, nome = estudio_voz.args_teste(dados)

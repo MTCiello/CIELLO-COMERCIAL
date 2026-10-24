@@ -1303,11 +1303,19 @@ async function renderConexoes(j) {
     if (e.ok === false) return `<span class="chip erro" title="${esc(e.mensagem || '')}">caiu${e.caiu_em ? ` em ${quandoBr(e.caiu_em)}` : ''}</span>`;
     if (e.ok) return `<span class="chip trabalhando">conectado</span>`;
     return '<span class="chip">não checado</span>'; };
+  const M = d.metricool || {};
+  const redesMc = [...new Set([...(M.conectadas || []), ...(M.faltam || [])])];
+  const metricool = `<div class="cartao metricool-conf ${M.ok === false ? 'alerta' : ''}"><div class="cab-conexao"><b>Metricool visto pelos agentes</b>${M.ok === true ? `<span class="chip ${M.velha ? '' : 'trabalhando'}">${M.velha ? 'conferir de novo' : 'tudo certo'}</span>` : M.ok === false ? '<span class="chip erro">falta conectar</span>' : '<span class="chip">não conferido</span>'}
+      ${M.marca ? `<small class="neutro">marca ${esc(M.marca.nome)}</small>` : ''}</div>
+    <p class="sub" style="margin:4px 0">Antes de agendar, puxar números ou estudar concorrentes, os agentes conferem se as redes que o OS usa estão conectadas na marca do Metricool. Se faltar alguma, eles param e avisam.</p>
+    ${M.ok === false ? `<div class="linha-item achado alto"><small style="white-space:normal"><b>${esc(M.mensagem || '')}.</b> Entre em <a href="https://app.metricool.com/" target="_blank" rel="noopener">app.metricool.com</a> → Conexões, reconecte e clique em Conferir agora. Até lá o piloto segura os posts dessa rede.</small></div>` : ''}
+    ${redesMc.length ? `<div class="acoes-linha">${redesMc.map((r) => `<span class="chip ${(M.faltam || []).includes(r) ? 'erro' : 'pronto'}">${(M.faltam || []).includes(r) ? '✕' : '✓'} ${esc((M.nomes || {})[r] || r)}${M.contas && M.contas[r] ? ` · ${esc(M.contas[r])}` : ''}</span>`).join('')}</div>` : ''}
+    <div class="acoes-linha" style="margin-top:8px"><button class="bt mini pri" data-acao="metricool_conferir">Conferir agora</button><small class="neutro">${M.quando ? `conferido em ${quandoBr(M.quando)}` : 'ainda não conferido'}</small></div></div>`;
   const redes = Object.entries(d.redes).map(([rede, r]) => {
     const opcoes = d.provedores.filter((p) => p.publica.includes(rede));
     return `<tr><td><b>${esc(d.nomes_redes[rede])}</b></td><td><select data-mudar="mudarRede" data-rede="${rede}" data-campo="ativa"><option value="sim" ${r.ativa ? 'selected' : ''}>ligada</option><option value="nao" ${r.ativa ? '' : 'selected'}>desligada</option></select></td>
       <td><select data-mudar="mudarRede" data-rede="${rede}" data-campo="via"><option value="">— escolha —</option>${opcoes.map((p) => `<option value="${p.id}" ${r.via === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></td>
-      <td>${r.via ? situacao(porId[r.via]) : '<small class="neutro">sem provedor: não publica</small>'}</td></tr>`; }).join('');
+      <td>${!r.via ? '<small class="neutro">sem provedor: não publica</small>' : r.ativa && ['claude', 'metricool'].includes(r.via) && (M.faltam || []).includes(rede) && M.ok === false ? '<span class="chip erro">desconectado no Metricool</span>' : situacao(porId[r.via])}</td></tr>`; }).join('');
   const cartao = (p) => { const e = p.estado || {}; const h = p.historico || {};
     return `<div class="cartao conexao"><div class="cab-conexao"><b>${esc(p.nome)}</b>${situacao(p)}${e.conta ? `<small class="neutro">${esc(e.conta)}</small>` : ''}</div>
       <p class="sub" style="margin:4px 0">${esc(p.ajuda)}${p.limite ? ` <span class="neutro">· ${esc(p.limite)}</span>` : ''}</p>
@@ -1319,6 +1327,7 @@ async function renderConexoes(j) {
         <button class="bt mini" data-fn="checar" data-id="${p.id}">Checar agora</button>${e.conectado && p.campos.length ? `<button class="bt mini" data-fn="desconectar" data-id="${p.id}">Desconectar</button>` : ''}</div></div>`; };
   j.corpo.innerHTML = `<div class="pagina"><h1>Conexões</h1><p class="sub">Metricool, Instagram, YouTube e TikTok. Tudo o que vem deles é copiado para o seu PC: se um provedor cair ou for desconectado, você não perde histórico nem trabalho, e os posts esperam na fila até a conexão voltar.</p>
   ${d.cofre_protegido ? '' : '<div class="faixa">Neste sistema as senhas ficam só codificadas (sem a proteção do Windows). No seu PC com Windows elas são cifradas.</div>'}
+  ${metricool}
   <h2>Por onde cada rede publica</h2><table class="tab"><tr><th>Rede</th><th>Piloto</th><th>Publica por</th><th>Situação</th></tr>${redes}</table>
   <h2>Provedores</h2><div class="grade2">${d.provedores.map(cartao).join('')}</div>
   <div class="acoes"><button class="bt pri" data-acao="sincronizar">Sincronizar agora</button><button class="bt" data-fn="exportar" title="Tudo em CSV, em estado/exportacao">Exportar histórico (CSV)</button></div></div>`;
@@ -1932,7 +1941,58 @@ function renderTerminal(j) {
 // ------------------------------------------------------------------ apps: biblioteca (central/biblioteca.py)
 // O gerenciador de conteúdo: abre pelos posts (capa, etapas, vídeo com as versões, legenda, narração e roteiro) e tem
 // as abas de arquivos para achar qualquer coisa solta. Só mostra: nada aqui é publicado ou apagado.
-const SECOES_BIB = [['posts', 'Posts'], ['videos', 'Vídeos'], ['capas', 'Capas'], ['roteiros', 'Roteiros'], ['pesquisas', 'Pesquisas'], ['vozes', 'Vozes']];
+const SECOES_BIB = [['posts', 'Posts'], ['videos', 'Vídeos'], ['capas', 'Capas'], ['roteiros', 'Roteiros'], ['pesquisas', 'Pesquisas'], ['vozes', 'Vozes'],
+  ['concorrentes', 'Concorrentes'], ['nichos', 'Nichos'], ['referencias', 'Referências']];
+const ROT_PESQUISA = { concorrentes: 'Os concorrentes que a vigia acompanha e o pesquisador estuda.', nichos: 'Os temas do conteúdo e os nichos de cliente que a busca de leads usa.',
+  referencias: 'Vídeos que viralizaram e servem de modelo de gancho, e onde o radar procura novidades.' };
+const visCurto = (v) => { const n = +v || 0; return n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} mi` : n >= 1e3 ? `${Math.round(n / 1e3)} mil` : n ? String(n) : ''; };
+const linkExt = (url, rot) => `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(rot)}</a>`;
+// abas Concorrentes, Nichos e Referências (central/pesquisa.py): o que orienta a pesquisa, com cadastro
+function pesquisaBib(j, P) {
+  const formConc = (c = {}) => dialogo(j, { titulo: c.nome ? `Editar ${c.nome}` : 'Novo concorrente', botao: 'Salvar',
+    texto: 'A vigia confere as páginas toda sexta. Para o pesquisador puxar os reels, cadastre o perfil também como concorrente no Metricool.',
+    campos: [{ nome: 'nome', rotulo: 'Nome', valor: c.nome, obrigatorio: true, meia: true }, { nome: 'instagram', rotulo: 'Instagram', valor: c.instagram, exemplo: 'perfil sem @', meia: true },
+      { nome: 'anuncios', rotulo: 'Nome na Biblioteca de Anúncios da Meta', valor: c.anuncios, meia: true },
+      { nome: 'urls', rotulo: 'Páginas para vigiar (uma por linha)', tipo: 'area', valor: (c.urls || []).map((u) => `${u.rotulo} | ${u.url}`).join('\n'), dica: 'rótulo | endereço, ex.: preços | https://site.com/planos' }],
+    enviar: formOp('pesquisa_concorrente', { antigo: c.nome || '' }) });
+  const formNicho = (n = {}) => dialogo(j, { titulo: n.nome ? `Editar ${n.nome}` : 'Novo nicho', botao: 'Salvar',
+    campos: [{ nome: 'nome', rotulo: 'Nicho', valor: n.nome, obrigatorio: true, meia: true }, { nome: 'prioridade', rotulo: 'Prioridade', tipo: 'escolha', valor: n.prioridade || 3, meia: true, opcoes: [[5, '5 · o melhor cliente'], [4, '4'], [3, '3'], [2, '2'], [1, '1 · só se sobrar tempo']] },
+      { nome: 'termos', rotulo: 'Como aparece no Google Maps', valor: (n.termos || []).join(', '), dica: 'separe por vírgula' },
+      { nome: 'dor', rotulo: 'A dor dele', tipo: 'area', valor: n.dor }, { nome: 'valor', rotulo: 'O que ele ganha', valor: n.valor }],
+    enviar: formOp('pesquisa_nicho', { id: n.id || '' }) });
+  const formRef = () => dialogo(j, { titulo: 'Nova referência', botao: 'Guardar',
+    texto: 'Um vídeo que viralizou e serve de modelo. O formato do gancho e o pilar saem sozinhos.',
+    campos: [{ nome: 'gancho', rotulo: 'Gancho (a primeira frase)', obrigatorio: true }, { nome: 'perfil', rotulo: 'Perfil', exemplo: '@perfil', meia: true },
+      { nome: 'views', rotulo: 'Visualizações', tipo: 'numero', meia: true }, { nome: 'url', rotulo: 'Link do vídeo' }, { nome: 'porque', rotulo: 'Por que funcionou', tipo: 'area' }],
+    enviar: formOp('pesquisa_referencia') });
+  Object.assign(j.fns, {
+    novoConcorrente: () => formConc(), editarConcorrente: ({ i }) => formConc(P.concorrentes[+i]),
+    novoNicho: () => formNicho(), editarNicho: ({ i }) => formNicho(P.nichos[+i]), novaReferencia: () => formRef(),
+  });
+  if (j.aba === 'concorrentes') {
+    const add = '<button class="bt pri" data-fn="novoConcorrente">+ Concorrente</button>';
+    return `<div class="acoes-linha cab-pesquisa">${add}<button class="bt" data-acao="vigia">Rodar a vigia agora</button></div>` + (P.concorrentes.length ? `<div class="grade-pesquisa">${P.concorrentes.map((c, i) => `<article class="cartao-pesquisa">
+      <header><span class="avatar-bib">${esc((c.nome || '?').slice(0, 1).toUpperCase())}</span><div><b>${esc(c.nome)}</b>${c.instagram ? `<small>${linkExt(`https://www.instagram.com/${c.instagram}/`, `@${c.instagram}`)}</small>` : '<small class="neutro">sem Instagram</small>'}</div>
+        <button class="bt mini" data-fn="editarConcorrente" data-i="${i}">Editar</button></header>
+      <ul class="links-bib">${c.urls.map((u) => `<li>${linkExt(u.url, u.rotulo)}${u.conferir ? ' <span class="chip esperando">conferir</span>' : ''}</li>`).join('') || '<li class="neutro">Nenhuma página para vigiar.</li>'}</ul>
+      ${c.anuncios ? `<footer>${linkExt(`https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q=${encodeURIComponent(c.anuncios)}`, 'Ver anúncios na Meta')}</footer>` : ''}</article>`).join('')}</div>`
+      : '<div class="vazio">Nenhum concorrente ainda. Cadastre quem disputa o mesmo cliente que você.</div>');
+  }
+  if (j.aba === 'nichos') {
+    const pontos = (n) => `<span class="prioridade-bib" title="Prioridade ${n} de 5">${[1, 2, 3, 4, 5].map((k) => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+    return `<h2>Pilares do conteúdo</h2><p class="sub">Os temas que o radar procura e o roteirista usa.</p><div class="grade-pilares">${P.pilares.map((p) => `<div class="pilar-bib"><b>${esc(p.nome)}</b><small>${p.referencias} ${p.referencias === 1 ? 'referência' : 'referências'}</small></div>`).join('')}</div>
+      <div class="cab-bib cab-nichos"><div><h2>Nichos de cliente</h2><p class="sub">Para quem a empresa vende. A busca de leads procura estes termos${P.cidades.length ? ` em ${esc(P.cidades.join(', '))}` : ''}.</p></div><button class="bt pri" data-fn="novoNicho">+ Nicho</button></div>
+      ${P.nichos.length ? `<div class="grade-pesquisa">${P.nichos.map((n, i) => `<article class="cartao-pesquisa"><header><div><b>${esc(n.nome)}</b>${pontos(n.prioridade)}</div><button class="bt mini" data-fn="editarNicho" data-i="${i}">Editar</button></header>
+        ${n.dor ? `<p><small class="neutro">Dor</small>${esc(n.dor)}</p>` : ''}${n.valor ? `<p><small class="neutro">Ganho</small>${esc(n.valor)}</p>` : ''}
+        <footer>${n.termos.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</footer></article>`).join('')}</div>` : '<div class="vazio">Nenhum nicho ainda.</div>'}`;
+  }
+  const refs = P.referencias.length ? `<div class="lista-refs">${P.referencias.map((r) => `<article class="ref-bib"><div class="views-bib"><b>${visCurto(r.views) || '—'}</b><small>views</small></div>
+      <div class="cresce"><b>${esc(r.gancho)}</b><small>${esc(r.perfil || '')}${r.nosso ? ' · nosso' : ''}${r.data ? ` · ${ddmm(r.data)}` : ''}</small>
+      <div class="chips-ref"><span class="chip trabalhando" title="${esc(r.formato_rotulo)}">${esc(r.formato || 'outro')}</span>${r.pilar ? `<span class="chip">${esc((P.pilares.find((p) => p.id === r.pilar) || { nome: r.pilar }).nome)}</span>` : ''}</div>
+      ${r.porque ? `<p>${esc(r.porque)}</p>` : ''}</div>${r.url ? linkExt(r.url, 'Abrir') : ''}</article>`).join('')}</div>` : '<div class="vazio">Nenhuma referência ainda. Guarde um vídeo que viralizou para virar modelo de gancho.</div>';
+  return `<div class="cab-bib"><h2>Vídeos de referência</h2><button class="bt pri" data-fn="novaReferencia">+ Referência</button></div>${refs}
+    <h2>Onde o radar procura</h2><div class="grade-pesquisa">${Object.entries(P.buscas).map(([fonte, l]) => `<article class="cartao-pesquisa"><header><b>${esc(fonte)}</b></header><footer>${l.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</footer></article>`).join('')}</div>`;
+}
 const ROT_ETAPA_BIB = { roteiro: 'Roteiro', narracao: 'Narração', video: 'Vídeo', final: 'Final', capa: 'Capa', legenda: 'Legenda', agendado: 'Agendado' };
 const ETAPAS_BIB = Object.keys(ROT_ETAPA_BIB);
 const FILTROS_BIB = [['todos', 'Todos'], ['producao', 'Em produção'], ['prontos', 'Com vídeo final'], ['publicados', 'Publicados']];
@@ -1990,7 +2050,8 @@ async function detalhePost(j, q) {
 async function renderBiblioteca(j) {
   const d = await api('/api/app/biblioteca'); const S = d.secoes; const R = d.resumo;
   j.busca = j.busca || ''; j.filtroBib = j.filtroBib || 'todos'; j.roteiros = j.roteiros || {};
-  const secoes = abas(j, SECOES_BIB.map(([k, r]) => [k, r, k === 'posts' ? d.posts.length : (S[k] || []).length]));
+  const P = d.pesquisa; const nPesquisa = { concorrentes: P.concorrentes.length, nichos: P.nichos.length, referencias: P.referencias.length };
+  const secoes = abas(j, SECOES_BIB.map(([k, r]) => [k, r, k === 'posts' ? d.posts.length : k in nPesquisa ? nPesquisa[k] : (S[k] || []).length]));
   const filtro = j.busca.trim().toLowerCase();
   const q = j.aba === 'posts' && d.posts.find((x) => x.post === j.post);
   j.fns = {
@@ -2014,7 +2075,8 @@ async function renderBiblioteca(j) {
     return;
   }
   let corpo;
-  if (j.aba === 'posts') {
+  if (j.aba in nPesquisa) corpo = pesquisaBib(j, P);
+  else if (j.aba === 'posts') {
     const passa = { todos: () => true, producao: (x) => !x.etapas.final, prontos: (x) => x.etapas.final, publicados: (x) => x.publicado }[j.filtroBib];
     const lista = d.posts.filter((x) => passa(x) && (!filtro || `${x.titulo} ${x.slug}`.toLowerCase().includes(filtro)));
     const kpis = `<div class="kpis kpis-bib">${[['Posts', R.posts, 'roteiros na agenda'], ['Em produção', R.producao, 'sem vídeo final'], ['Com vídeo final', R.prontos, 'prontos para revisar'], ['Publicados', R.publicados, 'no histórico']]
@@ -2044,7 +2106,8 @@ async function renderBiblioteca(j) {
     }
     corpo = (S[j.aba] || []).length ? busca('Buscar por título ou arquivo') + corpo : corpo;
   }
-  const cab = `<h1>Biblioteca</h1><p class="sub">${j.aba === 'posts' ? 'Cada post com o vídeo, a capa, a legenda e o roteiro num lugar só.' : 'Os arquivos soltos, do mais novo para o mais antigo.'} Nada aqui é publicado ou apagado.</p>`;
+  const cab = j.aba in nPesquisa ? `<h1>${esc(SECOES_BIB.find(([k]) => k === j.aba)[1])}</h1><p class="sub">${ROT_PESQUISA[j.aba]}</p>`
+    : `<h1>Biblioteca</h1><p class="sub">${j.aba === 'posts' ? 'Cada post com o vídeo, a capa, a legenda e o roteiro num lugar só.' : 'Os arquivos soltos, do mais novo para o mais antigo.'} Nada aqui é publicado ou apagado.</p>`;
   j.corpo.innerHTML = `<div class="pagina larga">${topo}${secoes}${cab}${corpo}</div>`;
 }
 
