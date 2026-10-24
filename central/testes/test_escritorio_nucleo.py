@@ -431,6 +431,24 @@ class TesteAtivos(unittest.TestCase):
             P.gravar_layout({**novo, "cielloLayout": None})  # o editor salva sem a versão
             self.assertEqual(P.ler_layout()["cielloLayout"], 7)  # e não troca de novo
 
+    def test_layout_v6_importado_pela_boas_vindas_fica(self):
+        """O dados-ciello.zip traz o layout v6: importado, ele não pode virar o padrão v7 ao abrir."""
+        import zipfile
+        from nucleo import persistencia as P
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        import dados_iniciais as D
+        v6 = {"version": 1, "cols": 27, "rows": 20, "cielloLayout": 6, "areas": [{"label": "Arquivos G"}]}
+        buf = __import__("io").BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("escritorio/layout.json", json.dumps(v6))
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(P, "CASA", Path(d) / "casa"), \
+                mock.patch.object(D, "RAIZ", Path(d)), mock.patch.object(P, "LAYOUT_ANTIGO", Path(d) / "nao-existe.json"):
+            self.assertTrue(D.importar(buf.getvalue())["ok"])
+            lay = P.ler_layout()
+            self.assertEqual((lay["cielloLayout"], lay["areas"]), (6, [{"label": "Arquivos G"}]))
+            P.gravar_layout({**lay, "cielloImportado": None, "cielloLayout": None})  # o editor salva sem os campos
+            self.assertEqual(P.ler_layout()["areas"], [{"label": "Arquivos G"}])
+
     def test_padrao_de_4_salas_vira_o_novo(self):
         from nucleo import persistencia as P
         areas = [{"label": n} for n in ("Gerente", "Produtor Social", "Comercial", "Vendas")]
