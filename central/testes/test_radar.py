@@ -3,7 +3,9 @@ import datetime as dt
 import os
 import sys
 import unittest
+import urllib.error
 from pathlib import Path
+from unittest import mock
 
 os.environ["CIELLO_COMERCIAL"] = str(Path(__file__).resolve().parents[2] / "exemplo" / "comercial")  # a empresa fictícia
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -68,6 +70,36 @@ class TesteRadar(unittest.TestCase):
         md = radar.relatorio(radar.pontuar(self.itens, DESDE), {"reddit": "HTTPError"}, HOJE, 7)
         self.assertIn("## Top 10 geral", md)
         self.assertIn("Fontes que falharam: reddit", md)
+
+    def test_busca_do_github_fica_dentro_do_limite_de_operadores(self):
+        urls = []
+
+        def falso(url, json_=True, headers=None):
+            urls.append(url)
+            return GITHUB
+
+        with mock.patch.object(radar, "baixar", falso):
+            achados = radar.github(DESDE)
+        self.assertEqual(len(urls), len(radar.GITHUB_TERMOS))
+        for u in urls:  # o GitHub responde 422 com mais de 5 AND/OR/NOT
+            self.assertLessEqual(radar.urllib.parse.unquote_plus(u).count(" OR "), 5)
+        self.assertEqual(len(achados), 2)  # o mesmo repositório nas duas buscas entra uma vez
+
+    def test_reddit_bloqueado_cai_no_feed_rss(self):
+        atom = b"""<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Claude agora faz planilhas</title>
+<link href="https://www.reddit.com/r/ClaudeAI/comments/x/claude/"/><updated>2026-10-18T10:00:00+00:00</updated>
+<content type="html">&lt;p&gt;texto&lt;/p&gt;</content></entry></feed>"""
+
+        def falso(url, json_=True, headers=None):
+            if url.endswith("limit=25") and ".json" in url:
+                raise urllib.error.HTTPError(url, 403, "Blocked", {}, None)
+            return atom
+
+        with mock.patch.object(radar, "baixar", falso):
+            achados = radar.reddit(7)
+        self.assertEqual(len(achados), len(radar.REDDIT_SUBS))
+        self.assertEqual(achados[0]["titulo"], "Claude agora faz planilhas")
+        self.assertEqual(achados[0]["data"], "2026-10-18")
 
 
 if __name__ == "__main__":
