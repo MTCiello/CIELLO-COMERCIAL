@@ -139,11 +139,10 @@ Detalhes, canais de atualização e como publicar uma versão nova em [`docs/ins
 **Pela pasta clonada (desenvolvimento):**
 
 1. Baixe o repositório (ZIP ou `git clone`).
-2. Clique duas vezes em **`instalar.cmd`**. Ele instala o que faltar pelo `winget` (Python 3.12, Git, Node.js, ffmpeg), cria o ambiente Python e pergunta se você quer a voz (uns 3 GB).
-3. Rode **`testar.cmd`** para conferir cada função.
-4. Abra **`Ciello.cmd`**. O Ciello OS abre numa janela própria.
+2. Prepare as dependências: `powershell -ExecutionPolicy Bypass -File instalador\preparar.ps1` (acrescente `-Voz` para a voz, uns 3 GB).
+3. Abra com `.venv\Scripts\pythonw.exe instalador\lancador.pyw` (é o mesmo que o ícone do instalador abre). A verificação fica no menu Iniciar do Ciello OS.
 
-Para o Bom dia sair sozinho às 7h e o piloto da rede social rodar de hora em hora, rode `agendar.cmd` uma vez.
+Para o Bom dia sair sozinho às 7h e o piloto da rede social rodar de hora em hora: `python instalador\rotinas.pyw ligar` (ou o botão **Rodar de hora em hora** em Rede social).
 
 <details>
 <summary>Rodar em Linux ou macOS (desenvolvimento)</summary>
@@ -165,7 +164,6 @@ python central/escritorio/servidor.py            # abre em http://127.0.0.1:3200
 
 ```
 .
-├── Ciello.cmd · instalar.cmd · testar.cmd · agendar.cmd   atalhos do Windows
 ├── instalador/              instalador do Windows (CielloOS-Setup.exe), ícone e atualizações · VERSION
 ├── central/                 o programa em Python
 │   ├── escritorio/          Ciello OS: servidor, tela (web/) e núcleo do escritório (nucleo/)

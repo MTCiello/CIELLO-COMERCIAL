@@ -32,7 +32,7 @@ def rodar(pedido: str, titulo: str = "", timeout: int = 1800) -> dict:
     """Roda um pedido sem janela e devolve {ok, saida}. Tudo fica registrado em estado/ia.jsonl."""
     cmd = comando()
     if not cmd:
-        return {"ok": False, "saida": "Claude Code não está instalado neste PC (rode o instalar.cmd)."}
+        return {"ok": False, "saida": "Claude Code não está instalado neste PC (menu Iniciar do Windows: Ciello OS > Reinstalar dependências)."}
     inicio = dt.datetime.now()
     try:
         p = subprocess.run([*cmd, "-p", pedido, "--allowedTools", FERRAMENTAS, "--output-format", "text"], cwd=dados.RAIZ,
