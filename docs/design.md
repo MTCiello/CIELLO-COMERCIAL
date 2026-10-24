@@ -25,7 +25,7 @@ Cada app pinta com a sua cor o ícone, a seleção do trilho, o botão principal
 
 | Tema | Apps | `--app` | `--app-container` | `--app-on` |
 |---|---|---|---|---|
-| conteudo | Conteúdo, Biblioteca, Rede social | #B4236B | #FFD8E8 | #3E001E |
+| conteudo | Perfis, Conteúdo, Biblioteca, Rede social | #B4236B | #FFD8E8 | #3E001E |
 | tendencias | Tendências, Concorrentes | #A04100 | #FFDBC9 | #351000 |
 | estudio | Estúdio de Voz, Estúdio de Vídeo | #B3261E | #F9DEDC | #410E0B |
 | atendimento | Atendimento | #006A6A | #B8F0EE | #002020 |
@@ -107,13 +107,17 @@ Estas telas seguem o seu próprio desenho. As outras usam os mesmos tokens, o tr
 
   ![Comercial: funil e quadro de leads](img/comercial.png)
 
+- **Perfis**: um perfil por marca do Metricool (a sua empresa é o primeiro; cada cliente é outro). A lista dos perfis fica à esquerda, com bolinhas por rede e o chip de alertas, e o "Novo perfil" explica que basta criar a marca no Metricool. À direita: faixa de avisos (rede desconectada, post agendado que não vai sair), números grandes (redes conectadas, seguidores, posts em 7 dias, agendados), um cartão por rede com os números da semana e, embaixo, a identidade do perfil e a esteira de produção ("Produzir o próximo mês" manda o pedido à equipe; tudo vai ao Metricool como rascunho).
+
+  ![Perfis](img/perfis.png)
+
 ## Layout de cada tela
 
 Cada tela tem um tipo de layout (`ux` em `APPS`, tabela `LAYOUTS` em `app.js`). Ele fixa o tamanho mínimo e máximo da janela e a largura máxima do conteúdo: abaixo do mínimo a tela quebraria, acima do máximo os botões e gráficos esticariam. Maximizada, a janela ocupa a tela toda e o conteúdo fica centralizado na largura do layout.
 
 | Layout | Telas | Janela mín. | Janela máx. | Conteúdo máx. |
 |---|---|---|---|---|
-| Painel | Financeiro, Comercial, Conteúdo, Rede social, Anúncios, Biblioteca | 760 × 480 | 1440 × 960 | 1180 |
+| Painel | Perfis, Financeiro, Comercial, Conteúdo, Rede social, Anúncios, Biblioteca | 760 × 480 | 1440 × 960 | 1180 |
 | Lista | Tendências, Equipe, Atendimento, Conexões | 640 × 440 | 1200 × 960 | 1040 |
 | Estúdio | Estúdio de Vídeo, Estúdio de Voz, Gerente (objetivos) | 720 × 520 | 1320 × 960 | 1120 |
 | Leitura | Bom dia, cada agente, Boas-vindas, Concorrentes | 520 × 420 | 900 × 900 | 760 |

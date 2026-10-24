@@ -68,6 +68,7 @@ import atualizacao  # noqa: E402
 
 import estudio_voz  # noqa: E402
 import operacao  # noqa: E402
+import perfis  # noqa: E402
 import piloto  # noqa: E402
 import plano  # noqa: E402
 import sdr  # noqa: E402
@@ -110,6 +111,7 @@ ACOES = {
     "piloto": ("Rodada do piloto automático", "postagem", ["central/piloto.py", "rodar"]),
     "sincronizar": ("Sincronizar as redes", "analista", ["central/social.py", "sincronizar"]),
     "metricool_conferir": ("Conferir o Metricool", "postagem", ["central/metricool_conferir.py", "--pelo-claude"]),
+    "perfis_atualizar": ("Atualizar os perfis pelo Metricool", "analista", ["central/perfis.py", "--pelo-claude"]),
     "atualizacao_verificar": ("Procurar atualizações do Ciello OS", "sistema", ["instalador/atualizacao.py", "verificar"]),
     "atualizacao_aplicar": ("Atualizar o Ciello OS", "sistema", ["instalador/atualizacao.py", "aplicar"]),
     "voz_instalar": ("Instalar a voz (Kokoro e Chatterbox, uns 3 GB)", "produtor-video", ["-m", "pip", "install", "-r", "central/requirements-voz.txt"]),
@@ -400,7 +402,7 @@ def salvar_empresa(dados):
 APPS = {"escritorio": app_escritorio, "conexoes": app_conexoes, "redes": app_redes, "rumo": app_rumo, "voz": estudio_voz.estado, "video": app_video, "atendimento": app_atendimento, "plano": plano.para_janela, "briefing": app_briefing, "financeiro": app_financeiro, "comercial": app_comercial,
         "conteudo": app_conteudo, "concorrentes": app_concorrentes, "tendencias": app_tendencias,
         "anuncios": lambda: {"campanhas": campanhas(), "resumo": kpis()["anuncios"]}, "atualizacoes": atualizacao.resumo_status,
-        "dados": app_dados, "biblioteca": lambda: {**biblioteca.listar(), "pesquisa": pesquisa.listar()}}
+        "dados": app_dados, "perfis": perfis.listar, "biblioteca": lambda: {**biblioteca.listar(), "pesquisa": pesquisa.listar()}}
 
 
 # ---------------------------------------------------------------- execução das ações
@@ -515,6 +517,12 @@ def operar(op, dados):
         if op == "cont_legenda_salvar":
             return conteudo.salvar_legenda(post, dados.get("texto", ""))
         return conteudo.marcar_agendado(post, str(dados.get("quando") or ""), "Publicado" if dados.get("publicado") else "Agendado")
+    if op == "perfil_identidade":
+        return perfis.salvar_identidade(str(dados.get("marca") or ""), dados)
+    if op == "perfil_esteira":
+        return perfis.salvar_esteira(str(dados.get("marca") or ""), dados)
+    if op == "perfil_pedido_mes":
+        return perfis.pedido_mes(str(dados.get("marca") or ""))
     if op == "conexao_salvar":
         return conexoes.salvar_credenciais(str(dados.get("provedor")), dados)
     if op == "conexao_checar":
