@@ -1303,11 +1303,19 @@ async function renderConexoes(j) {
     if (e.ok === false) return `<span class="chip erro" title="${esc(e.mensagem || '')}">caiu${e.caiu_em ? ` em ${quandoBr(e.caiu_em)}` : ''}</span>`;
     if (e.ok) return `<span class="chip trabalhando">conectado</span>`;
     return '<span class="chip">não checado</span>'; };
+  const M = d.metricool || {};
+  const redesMc = [...new Set([...(M.conectadas || []), ...(M.faltam || [])])];
+  const metricool = `<div class="cartao metricool-conf ${M.ok === false ? 'alerta' : ''}"><div class="cab-conexao"><b>Metricool visto pelos agentes</b>${M.ok === true ? `<span class="chip ${M.velha ? '' : 'trabalhando'}">${M.velha ? 'conferir de novo' : 'tudo certo'}</span>` : M.ok === false ? '<span class="chip erro">falta conectar</span>' : '<span class="chip">não conferido</span>'}
+      ${M.marca ? `<small class="neutro">marca ${esc(M.marca.nome)}</small>` : ''}</div>
+    <p class="sub" style="margin:4px 0">Antes de agendar, puxar números ou estudar concorrentes, os agentes conferem se as redes que o OS usa estão conectadas na marca do Metricool. Se faltar alguma, eles param e avisam.</p>
+    ${M.ok === false ? `<div class="linha-item achado alto"><small style="white-space:normal"><b>${esc(M.mensagem || '')}.</b> Entre em <a href="https://app.metricool.com/" target="_blank" rel="noopener">app.metricool.com</a> → Conexões, reconecte e clique em Conferir agora. Até lá o piloto segura os posts dessa rede.</small></div>` : ''}
+    ${redesMc.length ? `<div class="acoes-linha">${redesMc.map((r) => `<span class="chip ${(M.faltam || []).includes(r) ? 'erro' : 'pronto'}">${(M.faltam || []).includes(r) ? '✕' : '✓'} ${esc((M.nomes || {})[r] || r)}${M.contas && M.contas[r] ? ` · ${esc(M.contas[r])}` : ''}</span>`).join('')}</div>` : ''}
+    <div class="acoes-linha" style="margin-top:8px"><button class="bt mini pri" data-acao="metricool_conferir">Conferir agora</button><small class="neutro">${M.quando ? `conferido em ${quandoBr(M.quando)}` : 'ainda não conferido'}</small></div></div>`;
   const redes = Object.entries(d.redes).map(([rede, r]) => {
     const opcoes = d.provedores.filter((p) => p.publica.includes(rede));
     return `<tr><td><b>${esc(d.nomes_redes[rede])}</b></td><td><select data-mudar="mudarRede" data-rede="${rede}" data-campo="ativa"><option value="sim" ${r.ativa ? 'selected' : ''}>ligada</option><option value="nao" ${r.ativa ? '' : 'selected'}>desligada</option></select></td>
       <td><select data-mudar="mudarRede" data-rede="${rede}" data-campo="via"><option value="">— escolha —</option>${opcoes.map((p) => `<option value="${p.id}" ${r.via === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></td>
-      <td>${r.via ? situacao(porId[r.via]) : '<small class="neutro">sem provedor: não publica</small>'}</td></tr>`; }).join('');
+      <td>${!r.via ? '<small class="neutro">sem provedor: não publica</small>' : r.ativa && ['claude', 'metricool'].includes(r.via) && (M.faltam || []).includes(rede) && M.ok === false ? '<span class="chip erro">desconectado no Metricool</span>' : situacao(porId[r.via])}</td></tr>`; }).join('');
   const cartao = (p) => { const e = p.estado || {}; const h = p.historico || {};
     return `<div class="cartao conexao"><div class="cab-conexao"><b>${esc(p.nome)}</b>${situacao(p)}${e.conta ? `<small class="neutro">${esc(e.conta)}</small>` : ''}</div>
       <p class="sub" style="margin:4px 0">${esc(p.ajuda)}${p.limite ? ` <span class="neutro">· ${esc(p.limite)}</span>` : ''}</p>
@@ -1319,6 +1327,7 @@ async function renderConexoes(j) {
         <button class="bt mini" data-fn="checar" data-id="${p.id}">Checar agora</button>${e.conectado && p.campos.length ? `<button class="bt mini" data-fn="desconectar" data-id="${p.id}">Desconectar</button>` : ''}</div></div>`; };
   j.corpo.innerHTML = `<div class="pagina"><h1>Conexões</h1><p class="sub">Metricool, Instagram, YouTube e TikTok. Tudo o que vem deles é copiado para o seu PC: se um provedor cair ou for desconectado, você não perde histórico nem trabalho, e os posts esperam na fila até a conexão voltar.</p>
   ${d.cofre_protegido ? '' : '<div class="faixa">Neste sistema as senhas ficam só codificadas (sem a proteção do Windows). No seu PC com Windows elas são cifradas.</div>'}
+  ${metricool}
   <h2>Por onde cada rede publica</h2><table class="tab"><tr><th>Rede</th><th>Piloto</th><th>Publica por</th><th>Situação</th></tr>${redes}</table>
   <h2>Provedores</h2><div class="grade2">${d.provedores.map(cartao).join('')}</div>
   <div class="acoes"><button class="bt pri" data-acao="sincronizar">Sincronizar agora</button><button class="bt" data-fn="exportar" title="Tudo em CSV, em estado/exportacao">Exportar histórico (CSV)</button></div></div>`;
@@ -1930,53 +1939,176 @@ function renderTerminal(j) {
   j.aoFechar = () => { obs.disconnect(); ws.close(); term.dispose(); api('/api/terminal/fechar', { id }).catch(() => {}); delete SALVO.terminais[id]; salvar(); };
 }
 // ------------------------------------------------------------------ apps: biblioteca (central/biblioteca.py)
-// Tudo o que a equipe já produziu num lugar só: vídeos, capas, roteiros, pesquisas e vozes, para ver, ouvir e achar a pasta.
-const SECOES_BIB = [['videos', 'Vídeos'], ['capas', 'Capas'], ['roteiros', 'Roteiros'], ['pesquisas', 'Pesquisas'], ['vozes', 'Vozes']];
+// O gerenciador de conteúdo: abre pelos posts (capa, etapas, vídeo com as versões, legenda, narração e roteiro) e tem
+// as abas de arquivos para achar qualquer coisa solta. Só mostra: nada aqui é publicado ou apagado.
+const SECOES_BIB = [['posts', 'Posts'], ['videos', 'Vídeos'], ['capas', 'Capas'], ['roteiros', 'Roteiros'], ['pesquisas', 'Pesquisas'], ['vozes', 'Vozes'],
+  ['concorrentes', 'Concorrentes'], ['nichos', 'Nichos'], ['referencias', 'Referências']];
+const ROT_PESQUISA = { concorrentes: 'Os concorrentes que a vigia acompanha e o pesquisador estuda.', nichos: 'Os temas do conteúdo e os nichos de cliente que a busca de leads usa.',
+  referencias: 'Vídeos que viralizaram e servem de modelo de gancho, e onde o radar procura novidades.' };
+const visCurto = (v) => { const n = +v || 0; return n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} mi` : n >= 1e3 ? `${Math.round(n / 1e3)} mil` : n ? String(n) : ''; };
+const linkExt = (url, rot) => `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(rot)}</a>`;
+// abas Concorrentes, Nichos e Referências (central/pesquisa.py): o que orienta a pesquisa, com cadastro
+function pesquisaBib(j, P) {
+  const formConc = (c = {}) => dialogo(j, { titulo: c.nome ? `Editar ${c.nome}` : 'Novo concorrente', botao: 'Salvar',
+    texto: 'A vigia confere as páginas toda sexta. Para o pesquisador puxar os reels, cadastre o perfil também como concorrente no Metricool.',
+    campos: [{ nome: 'nome', rotulo: 'Nome', valor: c.nome, obrigatorio: true, meia: true }, { nome: 'instagram', rotulo: 'Instagram', valor: c.instagram, exemplo: 'perfil sem @', meia: true },
+      { nome: 'anuncios', rotulo: 'Nome na Biblioteca de Anúncios da Meta', valor: c.anuncios, meia: true },
+      { nome: 'urls', rotulo: 'Páginas para vigiar (uma por linha)', tipo: 'area', valor: (c.urls || []).map((u) => `${u.rotulo} | ${u.url}`).join('\n'), dica: 'rótulo | endereço, ex.: preços | https://site.com/planos' }],
+    enviar: formOp('pesquisa_concorrente', { antigo: c.nome || '' }) });
+  const formNicho = (n = {}) => dialogo(j, { titulo: n.nome ? `Editar ${n.nome}` : 'Novo nicho', botao: 'Salvar',
+    campos: [{ nome: 'nome', rotulo: 'Nicho', valor: n.nome, obrigatorio: true, meia: true }, { nome: 'prioridade', rotulo: 'Prioridade', tipo: 'escolha', valor: n.prioridade || 3, meia: true, opcoes: [[5, '5 · o melhor cliente'], [4, '4'], [3, '3'], [2, '2'], [1, '1 · só se sobrar tempo']] },
+      { nome: 'termos', rotulo: 'Como aparece no Google Maps', valor: (n.termos || []).join(', '), dica: 'separe por vírgula' },
+      { nome: 'dor', rotulo: 'A dor dele', tipo: 'area', valor: n.dor }, { nome: 'valor', rotulo: 'O que ele ganha', valor: n.valor }],
+    enviar: formOp('pesquisa_nicho', { id: n.id || '' }) });
+  const formRef = () => dialogo(j, { titulo: 'Nova referência', botao: 'Guardar',
+    texto: 'Um vídeo que viralizou e serve de modelo. O formato do gancho e o pilar saem sozinhos.',
+    campos: [{ nome: 'gancho', rotulo: 'Gancho (a primeira frase)', obrigatorio: true }, { nome: 'perfil', rotulo: 'Perfil', exemplo: '@perfil', meia: true },
+      { nome: 'views', rotulo: 'Visualizações', tipo: 'numero', meia: true }, { nome: 'url', rotulo: 'Link do vídeo' }, { nome: 'porque', rotulo: 'Por que funcionou', tipo: 'area' }],
+    enviar: formOp('pesquisa_referencia') });
+  Object.assign(j.fns, {
+    novoConcorrente: () => formConc(), editarConcorrente: ({ i }) => formConc(P.concorrentes[+i]),
+    novoNicho: () => formNicho(), editarNicho: ({ i }) => formNicho(P.nichos[+i]), novaReferencia: () => formRef(),
+  });
+  if (j.aba === 'concorrentes') {
+    const add = '<button class="bt pri" data-fn="novoConcorrente">+ Concorrente</button>';
+    return `<div class="acoes-linha cab-pesquisa">${add}<button class="bt" data-acao="vigia">Rodar a vigia agora</button></div>` + (P.concorrentes.length ? `<div class="grade-pesquisa">${P.concorrentes.map((c, i) => `<article class="cartao-pesquisa">
+      <header><span class="avatar-bib">${esc((c.nome || '?').slice(0, 1).toUpperCase())}</span><div><b>${esc(c.nome)}</b>${c.instagram ? `<small>${linkExt(`https://www.instagram.com/${c.instagram}/`, `@${c.instagram}`)}</small>` : '<small class="neutro">sem Instagram</small>'}</div>
+        <button class="bt mini" data-fn="editarConcorrente" data-i="${i}">Editar</button></header>
+      <ul class="links-bib">${c.urls.map((u) => `<li>${linkExt(u.url, u.rotulo)}${u.conferir ? ' <span class="chip esperando">conferir</span>' : ''}</li>`).join('') || '<li class="neutro">Nenhuma página para vigiar.</li>'}</ul>
+      ${c.anuncios ? `<footer>${linkExt(`https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q=${encodeURIComponent(c.anuncios)}`, 'Ver anúncios na Meta')}</footer>` : ''}</article>`).join('')}</div>`
+      : '<div class="vazio">Nenhum concorrente ainda. Cadastre quem disputa o mesmo cliente que você.</div>');
+  }
+  if (j.aba === 'nichos') {
+    const pontos = (n) => `<span class="prioridade-bib" title="Prioridade ${n} de 5">${[1, 2, 3, 4, 5].map((k) => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+    return `<h2>Pilares do conteúdo</h2><p class="sub">Os temas que o radar procura e o roteirista usa.</p><div class="grade-pilares">${P.pilares.map((p) => `<div class="pilar-bib"><b>${esc(p.nome)}</b><small>${p.referencias} ${p.referencias === 1 ? 'referência' : 'referências'}</small></div>`).join('')}</div>
+      <div class="cab-bib cab-nichos"><div><h2>Nichos de cliente</h2><p class="sub">Para quem a empresa vende. A busca de leads procura estes termos${P.cidades.length ? ` em ${esc(P.cidades.join(', '))}` : ''}.</p></div><button class="bt pri" data-fn="novoNicho">+ Nicho</button></div>
+      ${P.nichos.length ? `<div class="grade-pesquisa">${P.nichos.map((n, i) => `<article class="cartao-pesquisa"><header><div><b>${esc(n.nome)}</b>${pontos(n.prioridade)}</div><button class="bt mini" data-fn="editarNicho" data-i="${i}">Editar</button></header>
+        ${n.dor ? `<p><small class="neutro">Dor</small>${esc(n.dor)}</p>` : ''}${n.valor ? `<p><small class="neutro">Ganho</small>${esc(n.valor)}</p>` : ''}
+        <footer>${n.termos.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</footer></article>`).join('')}</div>` : '<div class="vazio">Nenhum nicho ainda.</div>'}`;
+  }
+  const refs = P.referencias.length ? `<div class="lista-refs">${P.referencias.map((r) => `<article class="ref-bib"><div class="views-bib"><b>${visCurto(r.views) || '—'}</b><small>views</small></div>
+      <div class="cresce"><b>${esc(r.gancho)}</b><small>${esc(r.perfil || '')}${r.nosso ? ' · nosso' : ''}${r.data ? ` · ${ddmm(r.data)}` : ''}</small>
+      <div class="chips-ref"><span class="chip trabalhando" title="${esc(r.formato_rotulo)}">${esc(r.formato || 'outro')}</span>${r.pilar ? `<span class="chip">${esc((P.pilares.find((p) => p.id === r.pilar) || { nome: r.pilar }).nome)}</span>` : ''}</div>
+      ${r.porque ? `<p>${esc(r.porque)}</p>` : ''}</div>${r.url ? linkExt(r.url, 'Abrir') : ''}</article>`).join('')}</div>` : '<div class="vazio">Nenhuma referência ainda. Guarde um vídeo que viralizou para virar modelo de gancho.</div>';
+  return `<div class="cab-bib"><h2>Vídeos de referência</h2><button class="bt pri" data-fn="novaReferencia">+ Referência</button></div>${refs}
+    <h2>Onde o radar procura</h2><div class="grade-pesquisa">${Object.entries(P.buscas).map(([fonte, l]) => `<article class="cartao-pesquisa"><header><b>${esc(fonte)}</b></header><footer>${l.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</footer></article>`).join('')}</div>`;
+}
+const ROT_ETAPA_BIB = { roteiro: 'Roteiro', narracao: 'Narração', video: 'Vídeo', final: 'Final', capa: 'Capa', legenda: 'Legenda', agendado: 'Agendado' };
+const ETAPAS_BIB = Object.keys(ROT_ETAPA_BIB);
+const FILTROS_BIB = [['todos', 'Todos'], ['producao', 'Em produção'], ['prontos', 'Com vídeo final'], ['publicados', 'Publicados']];
 const tamanho = (b) => (b >= 1e6 ? `${(b / 1e6).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
-const urlBib = (rel) => `/api/biblioteca/arquivo/${rel.split('/').map(encodeURIComponent).join('/')}`;
-function roteiroLegivel(txt) {
+const urlRel = (rel) => rel.split('/').map(encodeURIComponent).join('/');
+const urlBib = (rel) => `/api/biblioteca/arquivo/${urlRel(rel)}`;
+function roteiroLegivel(txt, comLegenda = true) {
   let d; try { d = JSON.parse(txt); } catch { return `<pre class="console">${esc(txt)}</pre>`; }
   const cenas = (d.scenes || []).map((c) => `<div class="cena-bib"><small>${esc(c.kicker || c.type || '')}</small><p>${esc(c.say || '')}</p></div>`).join('');
-  return `${cenas || '<div class="vazio">Roteiro sem cenas ainda.</div>'}${d.legenda ? `<div class="cena-bib legenda"><small>Legenda</small><p>${esc(d.legenda).replace(/\n/g, '<br>')}</p></div>` : ''}`;
+  return `${cenas || '<div class="vazio">Roteiro sem cenas ainda.</div>'}${comLegenda && d.legenda ? `<div class="cena-bib legenda"><small>Legenda</small><p>${esc(d.legenda).replace(/\n/g, '<br>')}</p></div>` : ''}`;
+}
+function statusPost(q) {
+  if (q.publicado) return ['pronto', 'Publicado'];
+  if (q.etapas.agendado) return ['pronto', 'Agendado'];
+  if (q.etapas.final) return ['trabalhando', 'Vídeo pronto'];
+  return ['esperando', `Falta ${ROT_ETAPA_BIB[q.proximo] || ''}`.trim()];
+}
+const quandoPost = (q) => (q.dias === 0 ? 'hoje' : q.dias === 1 ? 'amanhã' : q.dias > 1 ? `em ${q.dias} dias` : q.dias === -1 ? 'ontem' : `há ${-q.dias} dias`);
+const nomeVersao = (q, v) => (v.grupo === 'Rascunho do Estúdio' ? `Rascunho ${v.nome.replace(`${q.post}-`, '').replace(/\.mp4$/i, '')}` : v.grupo === 'Final' ? 'Final' : 'Sem acabamento');
+function cartaoPost(q) {
+  const v = q.videos[0]; const feitas = ETAPAS_BIB.filter((e) => q.etapas[e]).length; const [cls, rot] = statusPost(q);
+  const thumb = q.capa ? `<img loading="lazy" src="${urlBib(q.capa)}" alt="">`
+    : v ? `<video muted preload="metadata" src="${urlBib(v.rel)}#t=1"></video>` : `<span class="sem-midia">${icone('video')}<small>Sem vídeo ainda</small></span>`;
+  return `<button class="post-bib" data-fn="abrirPost" data-post="${esc(q.post)}" title="Abrir ${esc(q.titulo)}">
+    <span class="thumb-bib">${thumb}<span class="chip ${cls}">${esc(rot)}</span>${v ? `<span class="play-bib">${icone('play')}</span>` : ''}</span>
+    <span class="info-bib"><small class="data-bib">${ddmm(q.data)} · ${quandoPost(q)}</small><b>${esc(q.titulo)}</b>
+      <span class="progresso-bib" role="img" aria-label="${feitas} de ${ETAPAS_BIB.length} etapas"><i style="width:${(100 * feitas) / ETAPAS_BIB.length}%"></i></span>
+      <small>${feitas} de ${ETAPAS_BIB.length} etapas${q.videos.length ? ` · ${q.videos.length} ${q.videos.length > 1 ? 'versões' : 'vídeo'}` : ''}</small></span></button>`;
+}
+async function detalhePost(j, q) {
+  const v = q.videos.find((x) => x.rel === j.versao) || q.videos[0];
+  if (!j.roteiros[q.roteiro]) j.roteiros[q.roteiro] = await api(`/api/biblioteca/texto/${urlRel(q.roteiro)}`).catch(() => ({ ok: false }));
+  const rt = j.roteiros[q.roteiro];
+  const [cls, rot] = statusPost(q);
+  const player = v ? `<video class="player-bib" controls preload="metadata" src="${urlBib(v.rel)}"${q.capa ? ` poster="${urlBib(q.capa)}"` : ''}></video>`
+    : `<div class="player-bib sem-midia">${icone('video')}<b>Este post ainda não tem vídeo</b><small>Gere um rascunho no Estúdio de Vídeo ou peça à equipe.</small><button class="bt pri" data-abrir="video">Abrir o Estúdio de Vídeo</button></div>`;
+  const versoes = q.videos.length > 1 ? `<div class="versoes-bib" role="tablist" aria-label="Versões do vídeo">${q.videos.map((x) => `<button role="tab" aria-selected="${x.rel === v.rel}" class="${x.rel === v.rel ? 'on' : ''}" data-fn="versao" data-rel="${esc(x.rel)}">${esc(nomeVersao(q, x))}</button>`).join('')}</div>` : '';
+  const etapas = `<div class="etapas-post">${ETAPAS_BIB.map((e) => `<span class="etapa-post ${q.etapas[e] ? 'feita' : q.proximo === e ? 'proxima' : ''}">${q.etapas[e] ? '✓ ' : ''}${ROT_ETAPA_BIB[e]}</span>`).join('<i>›</i>')}</div>`;
+  const legenda = q.legenda ? `<pre class="texto-msg">${esc(q.legenda)}</pre><button class="bt mini" data-fn="copiarLegenda">Copiar legenda</button>`
+    : '<p class="sub">Sem legenda ainda. Gere na janela Conteúdo, em Produção.</p>';
+  const audios = q.audios.length ? q.audios.map((a) => `<div class="audio-linha-bib"><small>${esc(a.grupo)} · ${tamanho(a.tamanho)}</small><audio controls preload="none" src="${urlBib(a.rel)}"></audio></div>`).join('') : `<p class="sub">${q.etapas.narracao ? 'A narração já está dentro do vídeo final.' : 'Sem narração ainda.'}</p>`;
+  return `<div class="detalhe-bib">
+    <div class="midia-bib">${versoes}${player}${v ? `<div class="acoes-linha"><small class="neutro">${esc(v.nome)} · ${tamanho(v.tamanho)}</small><button class="bt mini" data-fn="pasta" data-rel="${esc(v.rel)}">Mostrar na pasta</button></div>` : ''}</div>
+    <div class="painel-bib">
+      <header><small class="data-bib">${ddmm(q.data)} · ${quandoPost(q)}</small><h2>${esc(q.titulo)}</h2><span class="chip ${cls}">${esc(rot)}</span></header>
+      <section class="cartao">${etapas}<div class="acoes-linha"><button class="bt pri mini" data-fn="producao">Ver na Produção</button><button class="bt mini" data-abrir="video">Estúdio de Vídeo</button></div></section>
+      <section class="cartao"><h3>Legenda</h3>${legenda}</section>
+      <div class="grade-bib-2">
+        <section class="cartao"><h3>Capa</h3>${q.capa ? `<a href="${urlBib(q.capa)}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img class="capa-bib" src="${urlBib(q.capa)}" alt="Capa de ${esc(q.titulo)}"></a>` : '<p class="sub">Sem capa ainda.</p>'}</section>
+        <section class="cartao"><h3>Narração</h3>${audios}</section>
+      </div>
+      <section class="cartao"><div class="cab-bib"><h3>Roteiro</h3><button class="bt mini" data-fn="pasta" data-rel="${esc(q.roteiro)}">Mostrar na pasta</button></div>${rt.ok ? roteiroLegivel(rt.texto, false) : '<div class="vazio">Não deu para abrir o roteiro.</div>'}</section>
+    </div></div>`;
 }
 async function renderBiblioteca(j) {
-  const d = await api('/api/app/biblioteca'); const S = d.secoes;
-  j.busca = j.busca || '';
-  const secoes = abas(j, SECOES_BIB.map(([k, r]) => [k, r, (S[k] || []).length]));
-  const todos = S[j.aba] || [];
+  const d = await api('/api/app/biblioteca'); const S = d.secoes; const R = d.resumo;
+  j.busca = j.busca || ''; j.filtroBib = j.filtroBib || 'todos'; j.roteiros = j.roteiros || {};
+  const P = d.pesquisa; const nPesquisa = { concorrentes: P.concorrentes.length, nichos: P.nichos.length, referencias: P.referencias.length };
+  const secoes = abas(j, SECOES_BIB.map(([k, r]) => [k, r, k === 'posts' ? d.posts.length : k in nPesquisa ? nPesquisa[k] : (S[k] || []).length]));
   const filtro = j.busca.trim().toLowerCase();
-  const itens = todos.filter((x) => !filtro || `${x.titulo} ${x.nome} ${x.grupo}`.toLowerCase().includes(filtro));
-  const sel = itens.find((x) => x.rel === j.sel) || itens[0];
+  const q = j.aba === 'posts' && d.posts.find((x) => x.post === j.post);
   j.fns = {
     buscar: (_, el) => { j.busca = el.value; clearTimeout(j.tBusca); j.tBusca = setTimeout(() => { desenhar(j, true).then(() => { const b = $('[name=busca-bib]', j.corpo); if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }); }, 250); },
     ver: ({ rel }) => { j.sel = rel; j.texto = null; desenhar(j, true); },
     pasta: ({ rel }) => rapido('biblioteca_mostrar', { rel }, 'Pasta aberta'),
-    atualizar: () => desenhar(j, true),
+    atualizar: () => { j.roteiros = {}; desenhar(j, true); },
+    abrirPost: ({ post }) => { j.post = post; j.versao = null; desenhar(j, true).then(() => { j.corpo.scrollTop = 0; }); },
+    voltar: () => { j.post = null; desenhar(j, true); },
+    versao: ({ rel }) => { j.versao = rel; desenhar(j, true); },
+    filtro: ({ f }) => { j.filtroBib = f; desenhar(j, true); },
+    copiarLegenda: () => q && copiar(q.legenda),
+    producao: () => abrirAba('conteudo', 'producao'),
   };
   const meta = (x) => `<small>${esc(x.grupo)} · ${ddmm(x.data)} · ${tamanho(x.tamanho)}</small>`;
   const botaoPasta = (x) => `<button class="bt mini" data-fn="pasta" data-rel="${esc(x.rel)}">Mostrar na pasta</button>`;
-  const topo = `<div class="acoes topo"><button class="bt" data-fn="atualizar">${icone('atualizar')} Atualizar</button><button class="bt" data-abrir="video">Estúdio de Vídeo</button></div>`;
-  const cab = `<h1>Biblioteca</h1><p class="sub">Tudo o que a equipe já produziu, do mais novo para o mais antigo. Nada aqui é publicado ou apagado.</p>`;
-  const busca = `<div class="filtros busca-bib"><input name="busca-bib" type="search" placeholder="Buscar por título ou arquivo" value="${esc(j.busca)}" data-mudar="buscar" aria-label="Buscar na Biblioteca"></div>`;
-  const vazioSecao = { videos: 'Nenhum vídeo ainda. Gere um rascunho no Estúdio de Vídeo ou peça um vídeo ao Gerente.', capas: 'Nenhuma capa ainda.', roteiros: 'Nenhum roteiro ainda.', pesquisas: 'Nenhuma pesquisa ainda. Rode o radar em Tendências.', vozes: 'Nenhum áudio ainda. Teste uma voz no Estúdio de Voz.' }[j.aba];
-  let conteudoHtml;
-  if (!itens.length) conteudoHtml = `<div class="vazio">${filtro ? 'Nada com essa busca.' : vazioSecao}</div>`;
-  else if (j.aba === 'videos') {
-    conteudoHtml = `<div class="grade-bib videos">${itens.map((x) => `<figure class="item-bib"><video controls preload="metadata" src="${urlBib(x.rel)}#t=0.5"></video>
-      <figcaption><b title="${esc(x.nome)}">${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
-  } else if (j.aba === 'capas') {
-    conteudoHtml = `<div class="grade-bib capas">${itens.map((x) => `<figure class="item-bib"><a href="${urlBib(x.rel)}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img loading="lazy" src="${urlBib(x.rel)}" alt="${esc(x.titulo)}"></a>
-      <figcaption><b>${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
-  } else if (j.aba === 'vozes') {
-    conteudoHtml = `<div class="lista">${itens.map((x) => `<div class="linha-item audio-bib"><div class="cresce"><b>${esc(x.titulo)}</b>${meta(x)}${x.tamanho < 20000 ? '<small class="alerta-bib">Quase vazio: a gravação pode não ter captado o microfone.</small>' : ''}</div>
-      <audio controls preload="none" src="${urlBib(x.rel)}"></audio>${botaoPasta(x)}</div>`).join('')}</div>`;
-  } else {
-    if (sel && j.texto?.rel !== sel.rel) { const t = await api(`/api/biblioteca/texto/${sel.rel.split('/').map(encodeURIComponent).join('/')}`); j.texto = { rel: sel.rel, ...t }; }
-    const corpo = !j.texto?.ok ? '<div class="vazio">Não deu para abrir este arquivo.</div>' : j.texto.tipo === 'json' ? roteiroLegivel(j.texto.texto) : `<div class="md">${md(j.texto.texto)}</div>`;
-    conteudoHtml = `<div class="lista-detalhe"><div class="lista-pautas" role="listbox" aria-label="Arquivos">${itens.map((x) => `<button class="item-pauta ${x.rel === sel.rel ? 'on' : ''}" role="option" aria-selected="${x.rel === sel.rel}" data-fn="ver" data-rel="${esc(x.rel)}"><span><b>${esc(x.titulo)}</b>${meta(x)}</span></button>`).join('')}</div>
-      <article class="detalhe-pauta"><div class="cab-bib"><div><small>${esc(sel.grupo)} · <code>${esc(sel.rel)}</code></small><h2>${esc(sel.titulo)}</h2></div>${botaoPasta(sel)}</div>${corpo}</article></div>`;
+  const topo = `<div class="acoes topo"><button class="bt" data-fn="atualizar">${icone('atualizar')} Atualizar</button><button class="bt" data-abrir="video">Estúdio de Vídeo</button><button class="bt" data-abrir="conteudo">Produção</button></div>`;
+  const busca = (dica) => `<div class="filtros busca-bib"><input name="busca-bib" type="search" placeholder="${dica}" value="${esc(j.busca)}" data-mudar="buscar" aria-label="Buscar na Biblioteca"></div>`;
+  if (q) {
+    j.corpo.innerHTML = `<div class="pagina larga">${topo}${secoes}<button class="voltar-bib" data-fn="voltar">‹ Todos os posts</button>${await detalhePost(j, q)}</div>`;
+    return;
   }
-  j.corpo.innerHTML = `<div class="pagina larga">${topo}${cab}${secoes}${busca}${conteudoHtml}</div>`;
+  let corpo;
+  if (j.aba in nPesquisa) corpo = pesquisaBib(j, P);
+  else if (j.aba === 'posts') {
+    const passa = { todos: () => true, producao: (x) => !x.etapas.final, prontos: (x) => x.etapas.final, publicados: (x) => x.publicado }[j.filtroBib];
+    const lista = d.posts.filter((x) => passa(x) && (!filtro || `${x.titulo} ${x.slug}`.toLowerCase().includes(filtro)));
+    const kpis = `<div class="kpis kpis-bib">${[['Posts', R.posts, 'roteiros na agenda'], ['Em produção', R.producao, 'sem vídeo final'], ['Com vídeo final', R.prontos, 'prontos para revisar'], ['Publicados', R.publicados, 'no histórico']]
+      .map(([t, n, s]) => `<div class="kpi"><small>${t}</small><strong>${n}</strong><em class="neutro">${s}</em></div>`).join('')}</div>`;
+    const filtros = `<div class="filtros-bib"><nav class="abas seg">${FILTROS_BIB.map(([k, r]) => `<button class="${k === j.filtroBib ? 'on' : ''}" data-fn="filtro" data-f="${k}">${r}</button>`).join('')}</nav>${busca('Buscar post pelo tema')}</div>`;
+    corpo = `${kpis}${filtros}${lista.length ? `<div class="grade-posts-bib">${lista.map(cartaoPost).join('')}</div>`
+      : `<div class="vazio">${d.posts.length ? 'Nenhum post com esse filtro.' : 'Nenhum roteiro ainda. Crie um em <b>Estúdio de Vídeo → Novo roteiro</b> ou peça um post ao Gerente: cada roteiro vira um cartão aqui, com o vídeo, a capa e a legenda.'}</div>`}`;
+  } else {
+    const itens = (S[j.aba] || []).filter((x) => !filtro || `${x.titulo} ${x.nome} ${x.grupo}`.toLowerCase().includes(filtro));
+    const sel = itens.find((x) => x.rel === j.sel) || itens[0];
+    const vazioSecao = { videos: 'Nenhum vídeo ainda. Gere um rascunho no Estúdio de Vídeo ou peça um vídeo ao Gerente.', capas: 'Nenhuma capa ainda.', roteiros: 'Nenhum roteiro ainda.', pesquisas: 'Nenhuma pesquisa ainda. Rode o radar em Tendências.', vozes: 'Nenhum áudio ainda. Teste uma voz no Estúdio de Voz.' }[j.aba];
+    if (!itens.length) corpo = `<div class="vazio">${filtro ? 'Nada com essa busca.' : vazioSecao}</div>`;
+    else if (j.aba === 'videos') {
+      corpo = `<div class="grade-bib videos">${itens.map((x) => `<figure class="item-bib"><video controls preload="metadata" src="${urlBib(x.rel)}#t=0.5"></video>
+        <figcaption><b title="${esc(x.nome)}">${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
+    } else if (j.aba === 'capas') {
+      corpo = `<div class="grade-bib capas">${itens.map((x) => `<figure class="item-bib"><a href="${urlBib(x.rel)}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img loading="lazy" src="${urlBib(x.rel)}" alt="${esc(x.titulo)}"></a>
+        <figcaption><b>${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
+    } else if (j.aba === 'vozes') {
+      corpo = `<div class="lista">${itens.map((x) => `<div class="linha-item audio-bib"><div class="cresce"><b>${esc(x.titulo)}</b>${meta(x)}${x.tamanho < 20000 ? '<small class="alerta-bib">Quase vazio: a gravação pode não ter captado o microfone.</small>' : ''}</div>
+        <audio controls preload="none" src="${urlBib(x.rel)}"></audio>${botaoPasta(x)}</div>`).join('')}</div>`;
+    } else {
+      if (sel && j.texto?.rel !== sel.rel) { const t = await api(`/api/biblioteca/texto/${urlRel(sel.rel)}`); j.texto = { rel: sel.rel, ...t }; }
+      const txt = !j.texto?.ok ? '<div class="vazio">Não deu para abrir este arquivo.</div>' : j.texto.tipo === 'json' ? roteiroLegivel(j.texto.texto) : `<div class="md">${md(j.texto.texto)}</div>`;
+      corpo = `<div class="lista-detalhe"><div class="lista-pautas" role="listbox" aria-label="Arquivos">${itens.map((x) => `<button class="item-pauta ${x.rel === sel.rel ? 'on' : ''}" role="option" aria-selected="${x.rel === sel.rel}" data-fn="ver" data-rel="${esc(x.rel)}"><span><b>${esc(x.titulo)}</b>${meta(x)}</span></button>`).join('')}</div>
+        <article class="detalhe-pauta"><div class="cab-bib"><div><small>${esc(sel.grupo)} · <code>${esc(sel.rel)}</code></small><h2>${esc(sel.titulo)}</h2></div>${botaoPasta(sel)}</div>${txt}</article></div>`;
+    }
+    corpo = (S[j.aba] || []).length ? busca('Buscar por título ou arquivo') + corpo : corpo;
+  }
+  const cab = j.aba in nPesquisa ? `<h1>${esc(SECOES_BIB.find(([k]) => k === j.aba)[1])}</h1><p class="sub">${ROT_PESQUISA[j.aba]}</p>`
+    : `<h1>Biblioteca</h1><p class="sub">${j.aba === 'posts' ? 'Cada post com o vídeo, a capa, a legenda e o roteiro num lugar só.' : 'Os arquivos soltos, do mais novo para o mais antigo.'} Nada aqui é publicado ou apagado.</p>`;
+  j.corpo.innerHTML = `<div class="pagina larga">${topo}${secoes}${cab}${corpo}</div>`;
 }
 
 async function renderAtividade(j) {
