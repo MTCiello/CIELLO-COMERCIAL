@@ -50,6 +50,31 @@ class TesteBiblioteca(unittest.TestCase):
         self.assertEqual({x["grupo"] for x in s["vozes"]}, {"Sua gravação", "Narração"})
         self.assertIn("Gravação das 13:40", [x["titulo"] for x in s["vozes"]])
 
+    def test_posts_juntam_video_capa_e_narracao_do_roteiro(self):
+        d = biblioteca.listar()
+        self.assertEqual(len(d["posts"]), 1)
+        q = d["posts"][0]
+        self.assertEqual(q["post"], "2026-10-24-ia-que-trabalha")
+        self.assertEqual(q["titulo"], "IA que trabalha")
+        self.assertEqual(q["roteiro"], "roteiros/2026-10-24-ia-que-trabalha.json")
+        self.assertEqual([v["rel"] for v in q["videos"]], ["midia/final/2026-10-24-ia-que-trabalha.mp4",  # o final vem primeiro
+                                                           "midia/estudio/2026-10-24-ia-que-trabalha-o98-15.mp4"])
+        self.assertEqual(q["capa"], "midia/capas/2026-10-24-ia-que-trabalha.jpg")
+        self.assertEqual([a["rel"] for a in q["audios"]], ["audio/ia-que-trabalha/narracao.wav"])
+        self.assertTrue(q["etapas"]["final"] and q["etapas"]["capa"])
+        self.assertFalse(q["publicado"])
+        self.assertEqual({k: d["resumo"][k] for k in ("posts", "prontos", "producao", "videos")}, {"posts": 1, "prontos": 1, "producao": 0, "videos": 3})
+
+    def test_nome_parecido_fica_no_post_certo(self):
+        (self.raiz / "roteiros" / "2026-10-24-ia-que-trabalha-2.json").write_text("{}", encoding="utf-8")
+        (self.raiz / "midia" / "2026-10-24-ia-que-trabalha-2.mp4").write_bytes(b"x")
+        (self.raiz / "historico.md").write_text("| Data | Tema | Origem | Vídeo | Status |\n|---|---|---|---|---|\n"
+                                                "| 24/10 | x | y | 2026-10-24-ia-que-trabalha-2 | Publicado |\n", encoding="utf-8")
+        ps = {x["post"]: x for x in biblioteca.listar()["posts"]}
+        self.assertEqual([v["rel"] for v in ps["2026-10-24-ia-que-trabalha-2"]["videos"]], ["midia/2026-10-24-ia-que-trabalha-2.mp4"])
+        self.assertNotIn("midia/2026-10-24-ia-que-trabalha-2.mp4", [v["rel"] for v in ps["2026-10-24-ia-que-trabalha"]["videos"]])
+        self.assertTrue(ps["2026-10-24-ia-que-trabalha-2"]["publicado"])
+
     def test_so_abre_arquivo_das_pastas_da_biblioteca(self):
         self.assertIsNotNone(biblioteca.caminho("midia/final/2026-10-24-ia-que-trabalha.mp4"))
         for rel in ("estado/segredo.json", "../fora.txt", "/etc/passwd", "midia\\x.mp4", "midia/nao-existe.mp4"):

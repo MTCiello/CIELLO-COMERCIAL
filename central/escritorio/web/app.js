@@ -1930,53 +1930,122 @@ function renderTerminal(j) {
   j.aoFechar = () => { obs.disconnect(); ws.close(); term.dispose(); api('/api/terminal/fechar', { id }).catch(() => {}); delete SALVO.terminais[id]; salvar(); };
 }
 // ------------------------------------------------------------------ apps: biblioteca (central/biblioteca.py)
-// Tudo o que a equipe já produziu num lugar só: vídeos, capas, roteiros, pesquisas e vozes, para ver, ouvir e achar a pasta.
-const SECOES_BIB = [['videos', 'Vídeos'], ['capas', 'Capas'], ['roteiros', 'Roteiros'], ['pesquisas', 'Pesquisas'], ['vozes', 'Vozes']];
+// O gerenciador de conteúdo: abre pelos posts (capa, etapas, vídeo com as versões, legenda, narração e roteiro) e tem
+// as abas de arquivos para achar qualquer coisa solta. Só mostra: nada aqui é publicado ou apagado.
+const SECOES_BIB = [['posts', 'Posts'], ['videos', 'Vídeos'], ['capas', 'Capas'], ['roteiros', 'Roteiros'], ['pesquisas', 'Pesquisas'], ['vozes', 'Vozes']];
+const ROT_ETAPA_BIB = { roteiro: 'Roteiro', narracao: 'Narração', video: 'Vídeo', final: 'Final', capa: 'Capa', legenda: 'Legenda', agendado: 'Agendado' };
+const ETAPAS_BIB = Object.keys(ROT_ETAPA_BIB);
+const FILTROS_BIB = [['todos', 'Todos'], ['producao', 'Em produção'], ['prontos', 'Com vídeo final'], ['publicados', 'Publicados']];
 const tamanho = (b) => (b >= 1e6 ? `${(b / 1e6).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
-const urlBib = (rel) => `/api/biblioteca/arquivo/${rel.split('/').map(encodeURIComponent).join('/')}`;
-function roteiroLegivel(txt) {
+const urlRel = (rel) => rel.split('/').map(encodeURIComponent).join('/');
+const urlBib = (rel) => `/api/biblioteca/arquivo/${urlRel(rel)}`;
+function roteiroLegivel(txt, comLegenda = true) {
   let d; try { d = JSON.parse(txt); } catch { return `<pre class="console">${esc(txt)}</pre>`; }
   const cenas = (d.scenes || []).map((c) => `<div class="cena-bib"><small>${esc(c.kicker || c.type || '')}</small><p>${esc(c.say || '')}</p></div>`).join('');
-  return `${cenas || '<div class="vazio">Roteiro sem cenas ainda.</div>'}${d.legenda ? `<div class="cena-bib legenda"><small>Legenda</small><p>${esc(d.legenda).replace(/\n/g, '<br>')}</p></div>` : ''}`;
+  return `${cenas || '<div class="vazio">Roteiro sem cenas ainda.</div>'}${comLegenda && d.legenda ? `<div class="cena-bib legenda"><small>Legenda</small><p>${esc(d.legenda).replace(/\n/g, '<br>')}</p></div>` : ''}`;
+}
+function statusPost(q) {
+  if (q.publicado) return ['pronto', 'Publicado'];
+  if (q.etapas.agendado) return ['pronto', 'Agendado'];
+  if (q.etapas.final) return ['trabalhando', 'Vídeo pronto'];
+  return ['esperando', `Falta ${ROT_ETAPA_BIB[q.proximo] || ''}`.trim()];
+}
+const quandoPost = (q) => (q.dias === 0 ? 'hoje' : q.dias === 1 ? 'amanhã' : q.dias > 1 ? `em ${q.dias} dias` : q.dias === -1 ? 'ontem' : `há ${-q.dias} dias`);
+const nomeVersao = (q, v) => (v.grupo === 'Rascunho do Estúdio' ? `Rascunho ${v.nome.replace(`${q.post}-`, '').replace(/\.mp4$/i, '')}` : v.grupo === 'Final' ? 'Final' : 'Sem acabamento');
+function cartaoPost(q) {
+  const v = q.videos[0]; const feitas = ETAPAS_BIB.filter((e) => q.etapas[e]).length; const [cls, rot] = statusPost(q);
+  const thumb = q.capa ? `<img loading="lazy" src="${urlBib(q.capa)}" alt="">`
+    : v ? `<video muted preload="metadata" src="${urlBib(v.rel)}#t=1"></video>` : `<span class="sem-midia">${icone('video')}<small>Sem vídeo ainda</small></span>`;
+  return `<button class="post-bib" data-fn="abrirPost" data-post="${esc(q.post)}" title="Abrir ${esc(q.titulo)}">
+    <span class="thumb-bib">${thumb}<span class="chip ${cls}">${esc(rot)}</span>${v ? `<span class="play-bib">${icone('play')}</span>` : ''}</span>
+    <span class="info-bib"><small class="data-bib">${ddmm(q.data)} · ${quandoPost(q)}</small><b>${esc(q.titulo)}</b>
+      <span class="progresso-bib" role="img" aria-label="${feitas} de ${ETAPAS_BIB.length} etapas"><i style="width:${(100 * feitas) / ETAPAS_BIB.length}%"></i></span>
+      <small>${feitas} de ${ETAPAS_BIB.length} etapas${q.videos.length ? ` · ${q.videos.length} ${q.videos.length > 1 ? 'versões' : 'vídeo'}` : ''}</small></span></button>`;
+}
+async function detalhePost(j, q) {
+  const v = q.videos.find((x) => x.rel === j.versao) || q.videos[0];
+  if (!j.roteiros[q.roteiro]) j.roteiros[q.roteiro] = await api(`/api/biblioteca/texto/${urlRel(q.roteiro)}`).catch(() => ({ ok: false }));
+  const rt = j.roteiros[q.roteiro];
+  const [cls, rot] = statusPost(q);
+  const player = v ? `<video class="player-bib" controls preload="metadata" src="${urlBib(v.rel)}"${q.capa ? ` poster="${urlBib(q.capa)}"` : ''}></video>`
+    : `<div class="player-bib sem-midia">${icone('video')}<b>Este post ainda não tem vídeo</b><small>Gere um rascunho no Estúdio de Vídeo ou peça à equipe.</small><button class="bt pri" data-abrir="video">Abrir o Estúdio de Vídeo</button></div>`;
+  const versoes = q.videos.length > 1 ? `<div class="versoes-bib" role="tablist" aria-label="Versões do vídeo">${q.videos.map((x) => `<button role="tab" aria-selected="${x.rel === v.rel}" class="${x.rel === v.rel ? 'on' : ''}" data-fn="versao" data-rel="${esc(x.rel)}">${esc(nomeVersao(q, x))}</button>`).join('')}</div>` : '';
+  const etapas = `<div class="etapas-post">${ETAPAS_BIB.map((e) => `<span class="etapa-post ${q.etapas[e] ? 'feita' : q.proximo === e ? 'proxima' : ''}">${q.etapas[e] ? '✓ ' : ''}${ROT_ETAPA_BIB[e]}</span>`).join('<i>›</i>')}</div>`;
+  const legenda = q.legenda ? `<pre class="texto-msg">${esc(q.legenda)}</pre><button class="bt mini" data-fn="copiarLegenda">Copiar legenda</button>`
+    : '<p class="sub">Sem legenda ainda. Gere na janela Conteúdo, em Produção.</p>';
+  const audios = q.audios.length ? q.audios.map((a) => `<div class="audio-linha-bib"><small>${esc(a.grupo)} · ${tamanho(a.tamanho)}</small><audio controls preload="none" src="${urlBib(a.rel)}"></audio></div>`).join('') : `<p class="sub">${q.etapas.narracao ? 'A narração já está dentro do vídeo final.' : 'Sem narração ainda.'}</p>`;
+  return `<div class="detalhe-bib">
+    <div class="midia-bib">${versoes}${player}${v ? `<div class="acoes-linha"><small class="neutro">${esc(v.nome)} · ${tamanho(v.tamanho)}</small><button class="bt mini" data-fn="pasta" data-rel="${esc(v.rel)}">Mostrar na pasta</button></div>` : ''}</div>
+    <div class="painel-bib">
+      <header><small class="data-bib">${ddmm(q.data)} · ${quandoPost(q)}</small><h2>${esc(q.titulo)}</h2><span class="chip ${cls}">${esc(rot)}</span></header>
+      <section class="cartao">${etapas}<div class="acoes-linha"><button class="bt pri mini" data-fn="producao">Ver na Produção</button><button class="bt mini" data-abrir="video">Estúdio de Vídeo</button></div></section>
+      <section class="cartao"><h3>Legenda</h3>${legenda}</section>
+      <div class="grade-bib-2">
+        <section class="cartao"><h3>Capa</h3>${q.capa ? `<a href="${urlBib(q.capa)}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img class="capa-bib" src="${urlBib(q.capa)}" alt="Capa de ${esc(q.titulo)}"></a>` : '<p class="sub">Sem capa ainda.</p>'}</section>
+        <section class="cartao"><h3>Narração</h3>${audios}</section>
+      </div>
+      <section class="cartao"><div class="cab-bib"><h3>Roteiro</h3><button class="bt mini" data-fn="pasta" data-rel="${esc(q.roteiro)}">Mostrar na pasta</button></div>${rt.ok ? roteiroLegivel(rt.texto, false) : '<div class="vazio">Não deu para abrir o roteiro.</div>'}</section>
+    </div></div>`;
 }
 async function renderBiblioteca(j) {
-  const d = await api('/api/app/biblioteca'); const S = d.secoes;
-  j.busca = j.busca || '';
-  const secoes = abas(j, SECOES_BIB.map(([k, r]) => [k, r, (S[k] || []).length]));
-  const todos = S[j.aba] || [];
+  const d = await api('/api/app/biblioteca'); const S = d.secoes; const R = d.resumo;
+  j.busca = j.busca || ''; j.filtroBib = j.filtroBib || 'todos'; j.roteiros = j.roteiros || {};
+  const secoes = abas(j, SECOES_BIB.map(([k, r]) => [k, r, k === 'posts' ? d.posts.length : (S[k] || []).length]));
   const filtro = j.busca.trim().toLowerCase();
-  const itens = todos.filter((x) => !filtro || `${x.titulo} ${x.nome} ${x.grupo}`.toLowerCase().includes(filtro));
-  const sel = itens.find((x) => x.rel === j.sel) || itens[0];
+  const q = j.aba === 'posts' && d.posts.find((x) => x.post === j.post);
   j.fns = {
     buscar: (_, el) => { j.busca = el.value; clearTimeout(j.tBusca); j.tBusca = setTimeout(() => { desenhar(j, true).then(() => { const b = $('[name=busca-bib]', j.corpo); if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }); }, 250); },
     ver: ({ rel }) => { j.sel = rel; j.texto = null; desenhar(j, true); },
     pasta: ({ rel }) => rapido('biblioteca_mostrar', { rel }, 'Pasta aberta'),
-    atualizar: () => desenhar(j, true),
+    atualizar: () => { j.roteiros = {}; desenhar(j, true); },
+    abrirPost: ({ post }) => { j.post = post; j.versao = null; desenhar(j, true).then(() => { j.corpo.scrollTop = 0; }); },
+    voltar: () => { j.post = null; desenhar(j, true); },
+    versao: ({ rel }) => { j.versao = rel; desenhar(j, true); },
+    filtro: ({ f }) => { j.filtroBib = f; desenhar(j, true); },
+    copiarLegenda: () => q && copiar(q.legenda),
+    producao: () => abrirAba('conteudo', 'producao'),
   };
   const meta = (x) => `<small>${esc(x.grupo)} · ${ddmm(x.data)} · ${tamanho(x.tamanho)}</small>`;
   const botaoPasta = (x) => `<button class="bt mini" data-fn="pasta" data-rel="${esc(x.rel)}">Mostrar na pasta</button>`;
-  const topo = `<div class="acoes topo"><button class="bt" data-fn="atualizar">${icone('atualizar')} Atualizar</button><button class="bt" data-abrir="video">Estúdio de Vídeo</button></div>`;
-  const cab = `<h1>Biblioteca</h1><p class="sub">Tudo o que a equipe já produziu, do mais novo para o mais antigo. Nada aqui é publicado ou apagado.</p>`;
-  const busca = `<div class="filtros busca-bib"><input name="busca-bib" type="search" placeholder="Buscar por título ou arquivo" value="${esc(j.busca)}" data-mudar="buscar" aria-label="Buscar na Biblioteca"></div>`;
-  const vazioSecao = { videos: 'Nenhum vídeo ainda. Gere um rascunho no Estúdio de Vídeo ou peça um vídeo ao Gerente.', capas: 'Nenhuma capa ainda.', roteiros: 'Nenhum roteiro ainda.', pesquisas: 'Nenhuma pesquisa ainda. Rode o radar em Tendências.', vozes: 'Nenhum áudio ainda. Teste uma voz no Estúdio de Voz.' }[j.aba];
-  let conteudoHtml;
-  if (!itens.length) conteudoHtml = `<div class="vazio">${filtro ? 'Nada com essa busca.' : vazioSecao}</div>`;
-  else if (j.aba === 'videos') {
-    conteudoHtml = `<div class="grade-bib videos">${itens.map((x) => `<figure class="item-bib"><video controls preload="metadata" src="${urlBib(x.rel)}#t=0.5"></video>
-      <figcaption><b title="${esc(x.nome)}">${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
-  } else if (j.aba === 'capas') {
-    conteudoHtml = `<div class="grade-bib capas">${itens.map((x) => `<figure class="item-bib"><a href="${urlBib(x.rel)}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img loading="lazy" src="${urlBib(x.rel)}" alt="${esc(x.titulo)}"></a>
-      <figcaption><b>${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
-  } else if (j.aba === 'vozes') {
-    conteudoHtml = `<div class="lista">${itens.map((x) => `<div class="linha-item audio-bib"><div class="cresce"><b>${esc(x.titulo)}</b>${meta(x)}${x.tamanho < 20000 ? '<small class="alerta-bib">Quase vazio: a gravação pode não ter captado o microfone.</small>' : ''}</div>
-      <audio controls preload="none" src="${urlBib(x.rel)}"></audio>${botaoPasta(x)}</div>`).join('')}</div>`;
-  } else {
-    if (sel && j.texto?.rel !== sel.rel) { const t = await api(`/api/biblioteca/texto/${sel.rel.split('/').map(encodeURIComponent).join('/')}`); j.texto = { rel: sel.rel, ...t }; }
-    const corpo = !j.texto?.ok ? '<div class="vazio">Não deu para abrir este arquivo.</div>' : j.texto.tipo === 'json' ? roteiroLegivel(j.texto.texto) : `<div class="md">${md(j.texto.texto)}</div>`;
-    conteudoHtml = `<div class="lista-detalhe"><div class="lista-pautas" role="listbox" aria-label="Arquivos">${itens.map((x) => `<button class="item-pauta ${x.rel === sel.rel ? 'on' : ''}" role="option" aria-selected="${x.rel === sel.rel}" data-fn="ver" data-rel="${esc(x.rel)}"><span><b>${esc(x.titulo)}</b>${meta(x)}</span></button>`).join('')}</div>
-      <article class="detalhe-pauta"><div class="cab-bib"><div><small>${esc(sel.grupo)} · <code>${esc(sel.rel)}</code></small><h2>${esc(sel.titulo)}</h2></div>${botaoPasta(sel)}</div>${corpo}</article></div>`;
+  const topo = `<div class="acoes topo"><button class="bt" data-fn="atualizar">${icone('atualizar')} Atualizar</button><button class="bt" data-abrir="video">Estúdio de Vídeo</button><button class="bt" data-abrir="conteudo">Produção</button></div>`;
+  const busca = (dica) => `<div class="filtros busca-bib"><input name="busca-bib" type="search" placeholder="${dica}" value="${esc(j.busca)}" data-mudar="buscar" aria-label="Buscar na Biblioteca"></div>`;
+  if (q) {
+    j.corpo.innerHTML = `<div class="pagina larga">${topo}${secoes}<button class="voltar-bib" data-fn="voltar">‹ Todos os posts</button>${await detalhePost(j, q)}</div>`;
+    return;
   }
-  j.corpo.innerHTML = `<div class="pagina larga">${topo}${cab}${secoes}${busca}${conteudoHtml}</div>`;
+  let corpo;
+  if (j.aba === 'posts') {
+    const passa = { todos: () => true, producao: (x) => !x.etapas.final, prontos: (x) => x.etapas.final, publicados: (x) => x.publicado }[j.filtroBib];
+    const lista = d.posts.filter((x) => passa(x) && (!filtro || `${x.titulo} ${x.slug}`.toLowerCase().includes(filtro)));
+    const kpis = `<div class="kpis kpis-bib">${[['Posts', R.posts, 'roteiros na agenda'], ['Em produção', R.producao, 'sem vídeo final'], ['Com vídeo final', R.prontos, 'prontos para revisar'], ['Publicados', R.publicados, 'no histórico']]
+      .map(([t, n, s]) => `<div class="kpi"><small>${t}</small><strong>${n}</strong><em class="neutro">${s}</em></div>`).join('')}</div>`;
+    const filtros = `<div class="filtros-bib"><nav class="abas seg">${FILTROS_BIB.map(([k, r]) => `<button class="${k === j.filtroBib ? 'on' : ''}" data-fn="filtro" data-f="${k}">${r}</button>`).join('')}</nav>${busca('Buscar post pelo tema')}</div>`;
+    corpo = `${kpis}${filtros}${lista.length ? `<div class="grade-posts-bib">${lista.map(cartaoPost).join('')}</div>`
+      : `<div class="vazio">${d.posts.length ? 'Nenhum post com esse filtro.' : 'Nenhum roteiro ainda. Crie um em <b>Estúdio de Vídeo → Novo roteiro</b> ou peça um post ao Gerente: cada roteiro vira um cartão aqui, com o vídeo, a capa e a legenda.'}</div>`}`;
+  } else {
+    const itens = (S[j.aba] || []).filter((x) => !filtro || `${x.titulo} ${x.nome} ${x.grupo}`.toLowerCase().includes(filtro));
+    const sel = itens.find((x) => x.rel === j.sel) || itens[0];
+    const vazioSecao = { videos: 'Nenhum vídeo ainda. Gere um rascunho no Estúdio de Vídeo ou peça um vídeo ao Gerente.', capas: 'Nenhuma capa ainda.', roteiros: 'Nenhum roteiro ainda.', pesquisas: 'Nenhuma pesquisa ainda. Rode o radar em Tendências.', vozes: 'Nenhum áudio ainda. Teste uma voz no Estúdio de Voz.' }[j.aba];
+    if (!itens.length) corpo = `<div class="vazio">${filtro ? 'Nada com essa busca.' : vazioSecao}</div>`;
+    else if (j.aba === 'videos') {
+      corpo = `<div class="grade-bib videos">${itens.map((x) => `<figure class="item-bib"><video controls preload="metadata" src="${urlBib(x.rel)}#t=0.5"></video>
+        <figcaption><b title="${esc(x.nome)}">${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
+    } else if (j.aba === 'capas') {
+      corpo = `<div class="grade-bib capas">${itens.map((x) => `<figure class="item-bib"><a href="${urlBib(x.rel)}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img loading="lazy" src="${urlBib(x.rel)}" alt="${esc(x.titulo)}"></a>
+        <figcaption><b>${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
+    } else if (j.aba === 'vozes') {
+      corpo = `<div class="lista">${itens.map((x) => `<div class="linha-item audio-bib"><div class="cresce"><b>${esc(x.titulo)}</b>${meta(x)}${x.tamanho < 20000 ? '<small class="alerta-bib">Quase vazio: a gravação pode não ter captado o microfone.</small>' : ''}</div>
+        <audio controls preload="none" src="${urlBib(x.rel)}"></audio>${botaoPasta(x)}</div>`).join('')}</div>`;
+    } else {
+      if (sel && j.texto?.rel !== sel.rel) { const t = await api(`/api/biblioteca/texto/${urlRel(sel.rel)}`); j.texto = { rel: sel.rel, ...t }; }
+      const txt = !j.texto?.ok ? '<div class="vazio">Não deu para abrir este arquivo.</div>' : j.texto.tipo === 'json' ? roteiroLegivel(j.texto.texto) : `<div class="md">${md(j.texto.texto)}</div>`;
+      corpo = `<div class="lista-detalhe"><div class="lista-pautas" role="listbox" aria-label="Arquivos">${itens.map((x) => `<button class="item-pauta ${x.rel === sel.rel ? 'on' : ''}" role="option" aria-selected="${x.rel === sel.rel}" data-fn="ver" data-rel="${esc(x.rel)}"><span><b>${esc(x.titulo)}</b>${meta(x)}</span></button>`).join('')}</div>
+        <article class="detalhe-pauta"><div class="cab-bib"><div><small>${esc(sel.grupo)} · <code>${esc(sel.rel)}</code></small><h2>${esc(sel.titulo)}</h2></div>${botaoPasta(sel)}</div>${txt}</article></div>`;
+    }
+    corpo = (S[j.aba] || []).length ? busca('Buscar por título ou arquivo') + corpo : corpo;
+  }
+  const cab = `<h1>Biblioteca</h1><p class="sub">${j.aba === 'posts' ? 'Cada post com o vídeo, a capa, a legenda e o roteiro num lugar só.' : 'Os arquivos soltos, do mais novo para o mais antigo.'} Nada aqui é publicado ou apagado.</p>`;
+  j.corpo.innerHTML = `<div class="pagina larga">${topo}${secoes}${cab}${corpo}</div>`;
 }
 
 async function renderAtividade(j) {

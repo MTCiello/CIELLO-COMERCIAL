@@ -1,6 +1,8 @@
 """Biblioteca: tudo o que o Ciello OS e a equipe já produziram, num lugar só.
 
-Vídeos (finais, rascunhos do Estúdio e os antigos), capas, roteiros, pesquisas (radar, relatórios, Bom dia) e
+A tela abre pelos posts: cada roteiro vira um cartão com a capa (ou o próprio vídeo), as etapas feitas e, ao abrir,
+o vídeo com as versões (final, rascunhos do Estúdio), a capa, a legenda, a narração e o roteiro. As abas de arquivos
+continuam para achar qualquer coisa solta: vídeos (finais, rascunhos do Estúdio e os antigos), capas, roteiros, pesquisas (radar, relatórios, Bom dia) e
 vozes (testes, gravações e narrações). A janela Biblioteca mostra, toca e abre a pasta de cada arquivo; nada aqui
 apaga ou publica.
 
@@ -71,6 +73,46 @@ def _data(p: Path, st) -> str:
     return dt.datetime.fromtimestamp(st.st_mtime).date().isoformat()
 
 
+def _post_do_arquivo(item: dict, stems: list[str]) -> str | None:
+    """De qual roteiro é o arquivo: mesmo nome (ou nome + -estilo) ou a pasta audio/<slug>/."""
+    p = Path(item["rel"])
+    if p.parts[0] == "audio" and len(p.parts) > 2:
+        return next((s for s in stems if s[11:] == p.parts[1]), None)
+    return next((s for s in stems if p.stem == s or p.stem.startswith(s + "-")), None)
+
+
+ORDEM_VIDEO = {"Final": 0, "Vídeo": 1, "Rascunho do Estúdio": 2}
+
+
+def posts(secoes: dict) -> list[dict]:
+    """Um cartão por roteiro com tudo o que já saiu dele, do mais novo para o mais antigo."""
+    base = raiz()
+    arquivos = sorted((base / "roteiros").glob("20??-??-??-*.json"))
+    stems = sorted((p.stem for p in arquivos), key=len, reverse=True)  # o nome mais longo ganha (tema-2 antes de tema)
+    hist = conteudo.historico(base / "historico.md")
+    out = {}
+    for p in arquivos:
+        try:
+            q = conteudo.post(p, hist, base)
+        except ValueError:  # data inválida no nome
+            continue
+        out[p.stem] = {**{k: q[k] for k in ("post", "slug", "data", "dias", "titulo", "etapas", "falta", "proximo", "dono", "pronto", "legenda")},
+                       "publicado": bool(re.search(r"publicad", q["status_historico"], re.I)),
+                       "roteiro": p.relative_to(base).as_posix(), "videos": [], "capa": None, "audios": []}
+    for secao, chave in (("videos", "videos"), ("capas", "capa"), ("vozes", "audios")):
+        for item in secoes.get(secao, []):
+            s = _post_do_arquivo(item, stems)
+            if s not in out:
+                continue
+            if chave == "capa":
+                out[s]["capa"] = out[s]["capa"] or item["rel"]
+            else:
+                out[s][chave].append({k: item[k] for k in ("rel", "grupo", "nome", "tamanho", "modificado")})
+    for x in out.values():
+        x["videos"].sort(key=lambda v: (ORDEM_VIDEO.get(v["grupo"], 9), v["nome"]))
+    return sorted(out.values(), key=lambda x: x["data"], reverse=True)
+
+
 def listar() -> dict:
     base, titulos = raiz(), _titulos()
     out, vistos = {}, set()
@@ -95,7 +137,11 @@ def listar() -> dict:
                               "tipo": p.suffix.lower().lstrip(".")})
         itens.sort(key=lambda x: (x["modificado"], x["data"]), reverse=True)
         out[secao] = itens
-    return {"secoes": out, "pasta": str(base)}
+    ps = posts(out)
+    resumo = {"posts": len(ps), "prontos": sum(1 for x in ps if x["etapas"]["final"]),
+              "producao": sum(1 for x in ps if not x["etapas"]["final"]), "publicados": sum(1 for x in ps if x["publicado"]),
+              **{k: len(v) for k, v in out.items()}}
+    return {"secoes": out, "posts": ps, "resumo": resumo, "pasta": str(base)}
 
 
 def caminho(rel: str) -> Path | None:
