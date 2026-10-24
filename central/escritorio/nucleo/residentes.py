@@ -21,7 +21,7 @@ AREAS = {  # as salas do layout padrão (central/escritorio/gerar_layout.py); um
     "sdr": "Vendas", "closer": "Vendas", "sucesso-cliente": "Vendas",
     "financeiro": "Comercial", "gestor-anuncios": "Comercial", "caixa-entrada": "Comercial",
 }
-SALA_DAS_SESSOES = "Gerente"  # a sessão do Claude Code em que você conversa (os objetivos) senta na sala do Gerente
+SALA_DAS_SESSOES = "Gerente"  # sessão sem boneco próprio (fachada.py) aparece no Gerente; sem Gerente, senta na sala dele
 # o mesmo nome das janelas do Ciello OS (web/app.js, NOMES): o clique no personagem acha a janela por ele
 NOMES = {
     "gerente": "Gerente", "pesquisador-mercado": "Pesquisador de Mercado", "roteirista": "Roteirista",
