@@ -43,6 +43,11 @@ class Sala:
     # ---------------------------------------------------------- ciclo de vida
     def iniciar(self):
         cfg = P.config()
+        if cfg["hooks"] is True and G.de_outra_pasta():  # você já disse sim: só aponta para esta instalação
+            try:
+                G.instalar()
+            except (OSError, ValueError) as e:
+                print(f"[escritório] não deu para atualizar os hooks: {e}")
         self.vigia.ganchos_ligados = cfg["hooks"] is True and G.instalados()
         self.vigia.ver_todas = bool(cfg["preferencias"]["watchAllSessions"])
         self._anotar_servidor()

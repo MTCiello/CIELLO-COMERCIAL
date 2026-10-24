@@ -276,6 +276,29 @@ class TesteInstalacaoDosHooks(unittest.TestCase):
             self.assertEqual(json.loads(cfg.read_text()), {"model": "opus", "hooks": {"PreToolUse": [outro]}})
 
 
+    def test_hooks_de_outra_instalacao_sao_reapontados(self):
+        with tempfile.TemporaryDirectory() as d:
+            cfg = Path(d) / "settings.json"
+            velho = '"C:\\Ciello\\agente-de-postagem\\.venv\\Scripts\\pythonw.exe" "C:\\Ciello\\agente-de-postagem\\central\\escritorio\\gancho.py"'
+            cfg.write_text(json.dumps({"hooks": {"Stop": [{"matcher": "", "hooks": [{"type": "command", "command": velho}]}]}}))
+            self.assertTrue(G.instalados(cfg))
+            self.assertTrue(G.de_outra_pasta(cfg))
+            G.instalar(cfg)
+            self.assertFalse(G.de_outra_pasta(cfg))
+            self.assertNotIn("agente-de-postagem", cfg.read_text())
+
+
+class TesteCabecalhoDosAgentes(unittest.TestCase):
+    def test_todo_agente_tem_cabecalho_que_o_claude_code_aceita(self):
+        from nucleo.residentes import problema_no_cabecalho
+        agentes = sorted((Path(__file__).resolve().parents[2] / ".claude" / "agents").glob("*.md"))
+        self.assertGreaterEqual(len(agentes), 13)
+        for p in agentes:
+            self.assertEqual(problema_no_cabecalho(p.read_text(encoding="utf-8").split("---")[1]), "", p.name)
+        self.assertIn("aspas", problema_no_cabecalho("name: x\ndescription: Faz vídeos: narração e render"))
+        self.assertEqual(problema_no_cabecalho("name: x\ndescription: 'Faz vídeos: narração'"), "")
+
+
 class TesteWebSocket(unittest.TestCase):
     def test_quadros_mascarados_grandes_e_ping(self):
         a, b = socket.socketpair()

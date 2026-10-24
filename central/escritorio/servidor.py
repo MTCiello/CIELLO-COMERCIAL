@@ -183,7 +183,7 @@ def equipe():
     agentes = []
     for p in sorted((RAIZ / ".claude" / "agents").glob("*.md")):
         cab = p.read_text(encoding="utf-8").split("---")[1]
-        campo = lambda k: (re.search(rf"^{k}:\s*(.+)$", cab, re.M) or [None, ""])[1].strip()
+        campo = lambda k: (re.search(rf"^{k}:\s*(.+)$", cab, re.M) or [None, ""])[1].strip().strip("'\"").replace("''", "'")
         agentes.append({"nome": campo("name"), "descricao": campo("description"), "cor": campo("color"),
                         "acoes": [{"id": k, "rotulo": v[0]} for k, v in ACOES.items() if v[1] == campo("name")]})
     est = status.ultimo_estado()

@@ -1,6 +1,6 @@
 ---
 name: postagem
-description: Publica: legenda, hashtags, capa, melhor horário e agendamento no Metricool, e registro no histórico. Use proactively quando houver vídeo final e capa prontos.
+description: 'Publica: legenda, hashtags, capa, melhor horário e agendamento no Metricool, e registro no histórico. Use proactively quando houver vídeo final e capa prontos.'
 color: green
 model: sonnet
 effort: low
