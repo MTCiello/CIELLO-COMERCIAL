@@ -39,6 +39,9 @@ const SVG = {
   numeros: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   instagram: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6"/>',
+  tiktok: '<path d="M13 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M13 3c.4 2.6 2.3 4.5 5 4.8"/>',
+  youtube: '<rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10 9.3v5.4l4.6-2.7z"/>',
+  perfis: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5"/><circle cx="17.5" cy="9" r="2.4"/><path d="M16 14.2c2.3.1 4 1.6 4.6 4.3"/>',
   casa: '<path d="M3 12l9-8 9 8M5 10v10h14V10"/>',
   pessoas: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M17 4a4 4 0 0 1 0 8M22 21c0-3-2-5-4-5.5"/>',
   pessoa: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/>',
@@ -71,6 +74,7 @@ const TEMAS = {
 };
 const corTema = (t) => (TEMAS[t] || TEMAS.os)[0];
 const APPS = {
+  perfis: { titulo: 'Perfis', icone: 'perfis', tema: 'conteudo', cor: corTema('conteudo'), ux: 'painel', w: 1120, h: 780, render: renderPerfis },
   redes: { titulo: 'Rede social', icone: 'redes', tema: 'conteudo', cor: corTema('conteudo'), ux: 'painel', w: 960, h: 720, render: renderRedes },
   conexoes: { titulo: 'Conexões', icone: 'conexoes', tema: 'os', cor: corTema('os'), ux: 'lista', w: 900, h: 700, render: renderConexoes },
   objetivos: { titulo: 'Gerente · objetivos e esteiras', icone: 'alvo', tema: 'os', cor: corTema('os'), ux: 'estudio', w: 900, h: 700, render: renderObjetivos, cada: 3000 },
@@ -92,10 +96,10 @@ const APPS = {
   atualizacoes: { titulo: 'Atualizações', icone: 'atualizar', tema: 'os', cor: corTema('os'), ux: 'compacta', w: 620, h: 520, render: renderAtualizacoes },
 };
 // menu Iniciar por objetivo: o que você quer fazer agora
-const GRUPOS = [['Criar', ['biblioteca', 'redes', 'video', 'conteudo', 'voz', 'tendencias', 'concorrentes']], ['Vender', ['comercial', 'atendimento', 'anuncios']],
+const GRUPOS = [['Criar', ['perfis', 'biblioteca', 'redes', 'video', 'conteudo', 'voz', 'tendencias', 'concorrentes']], ['Vender', ['comercial', 'atendimento', 'anuncios']],
   ['Gerir', ['briefing', 'financeiro', 'objetivos']], ['Sistema', ['dados', 'conexoes', 'equipe', 'atividade', 'verificar', 'atualizacoes']]];
 // no dock, como no Mac: os apps do dia a dia ficam sempre lá; os outros aparecem enquanto estão abertos
-const NO_DOCK = ['briefing', 'financeiro', 'comercial', 'atendimento', 'conteudo', 'video', 'voz', 'biblioteca', 'tendencias'];
+const NO_DOCK = ['briefing', 'financeiro', 'comercial', 'atendimento', 'perfis', 'conteudo', 'video', 'voz', 'biblioteca', 'tendencias'];
 
 const NOMES = { gerente: 'Gerente', 'pesquisador-mercado': 'Pesquisador de Mercado', roteirista: 'Roteirista', 'produtor-video': 'Produtor de Vídeo',
   'produtor-imagem': 'Produtor de Imagem', postagem: 'Postagem', analista: 'Analista', 'gestor-anuncios': 'Gestor de Anúncios', sdr: 'SDR', closer: 'Closer',
@@ -1554,6 +1558,95 @@ async function renderRedes(j) {
   const novos = d.comentarios.length;
   j.corpo.innerHTML = `<div class="pagina"><h1>Rede social</h1><p class="sub">Piloto ${esc(P.modos[c.modo])} · ${Object.entries(d.redes).filter(([, r]) => r.ativa && r.via).map(([r]) => nomeRede(r)).join(', ') || 'nenhuma rede ligada'}</p>
   ${abas(j, [['piloto', 'Piloto', P.fila.filter((e) => ['aguardando_aprovacao', 'erro'].includes(e.estado)).length || ''], ['calendario', 'Calendário do mês'], ['comentarios', 'Comentários', novos || ''], ['resultados', 'Resultados']])}${corpo}</div>`;
+}
+
+// ------------------------------------------------------------------ apps: perfis (cada marca do Metricool, as redes, a identidade e a esteira)
+const ESTADO_REDE = { conectado: ['pronto', 'Conectado'], desconectado: ['erro', 'Desconectado'], fora: ['parado', 'Fora da esteira'] };
+const numOuTraco = (v) => (v == null ? '—' : num(Math.round(v)));
+async function renderPerfis(j) {
+  const d = await api('/api/app/perfis');
+  const P = d.perfis.find((p) => p.id === j.perfil) || d.perfis[0];
+  if (P) j.perfil = P.id;
+  const atualizado = d.conferido ? `Metricool conferido em ${quandoBr(d.conferido)}${d.conferido_velho ? ' (confira de novo)' : ''}` : 'Metricool ainda não conferido';
+  j.fns = {
+    perfil: ({ id }) => { j.perfil = id; desenhar(j, true); },
+    identidade: () => { const i = P.identidade;
+      dialogo(j, { titulo: `Identidade · ${P.nome}`, texto: 'É o que os agentes leem antes de escrever para este perfil. Fica em comercial/perfis.json, só no seu PC.',
+        campos: [{ nome: 'nome', rotulo: 'Nome do perfil', valor: P.nome, obrigatorio: true, meia: true },
+          { nome: 'publico', rotulo: 'Público', valor: i.publico, exemplo: 'donos de pequenos negócios', meia: true },
+          { nome: 'tom', rotulo: 'Tom de voz', valor: i.tom, exemplo: 'direto, prático, sem jargão' },
+          { nome: 'pilares', rotulo: 'Pilares (separe por vírgula)', valor: (i.pilares || []).join(', '), exemplo: 'IA no dia a dia, automação, bastidores' },
+          { nome: 'assinatura', rotulo: 'Frase no fim das legendas', valor: i.assinatura }],
+        botao: 'Salvar identidade', enviar: formOp('perfil_identidade', { marca: P.id }) }); },
+    esteira: () => { const e = P.esteira;
+      dialogo(j, { titulo: `Esteira · ${P.nome}`, texto: 'Defina uma vez. Depois o assistente produz o mês, agenda tudo no Metricool como rascunho e você só confere o cronograma.',
+        campos: [{ nome: 'por_semana', rotulo: 'Posts por semana', tipo: 'numero', valor: e.por_semana, meia: true },
+          { nome: 'formatos', rotulo: 'Formatos', valor: e.formatos, meia: true },
+          { nome: 'redes', rotulo: 'Redes', tipo: 'marcar', opcoes: P.redes.map((r) => r.nome), valor: P.redes.filter((r) => e.redes.includes(r.rede)).map((r) => r.nome) },
+          { nome: 'ativa', rotulo: 'Esteira ligada', tipo: 'sim', valor: P.esteira_definida ? e.ativa : true }],
+        botao: 'Salvar esteira', enviar: (x) => operar('perfil_esteira', { ...x, marca: P.id, redes: P.redes.filter((r) => x.redes.includes(r.nome)).map((r) => r.rede) }) }); },
+    produzir: async () => { const r = await operar('perfil_pedido_mes', { marca: P.id });
+      if (!r.ok) return aviso({ titulo: 'Ainda não dá', texto: r.saida, cor: '#C8442F' });
+      pedirEquipe(r.pedido, r.titulo); },
+    reconectar: () => window.open('https://app.metricool.com/', '_blank', 'noopener'),
+  };
+  if (!P) {
+    j.corpo.innerHTML = `<div class="pagina"><h1>Perfis</h1><div class="vazio"><p>Cada marca do Metricool vira um perfil aqui, com as redes conectadas e como cada uma está.</p>
+      <p class="sub">${esc(d.mensagem || 'Ainda não conferi o Metricool.')}</p><button class="bt pri" data-acao="perfis_atualizar">${icone('atualizar')} Conferir o Metricool</button></div></div>`;
+    return;
+  }
+  const bolinhas = (p) => p.redes.filter((r) => r.estado !== 'fora').map((r) => `<i class="bol ${r.estado}" title="${esc(r.nome)}: ${esc(ESTADO_REDE[r.estado][1])}"></i>`).join('');
+  const lista = `<aside class="lista-perfis" aria-label="Perfis"><small class="rotulo">Seus perfis · ${d.perfis.length}</small>
+    ${d.perfis.map((p) => `<button class="item-perfil ${p.id === P.id ? 'on' : ''}" data-fn="perfil" data-id="${esc(p.id)}" ${p.id === P.id ? 'aria-current="true"' : ''}>
+      <span class="avatar-perfil">${esc(iniciais(p.nome))}</span><span class="cresce"><b>${esc(p.nome)}</b>
+      <span class="bolinhas">${bolinhas(p)}<small>${p.resumo.conectadas} de ${p.resumo.usadas} redes ok</small></span>
+      ${p.alertas.length ? `<span class="chip erro">${p.alertas.length} alerta${p.alertas.length > 1 ? 's' : ''}</span>` : '<span class="chip pronto">tudo certo</span>'}</span></button>`).join('')}
+    <a class="novo-perfil" href="https://app.metricool.com/" target="_blank" rel="noopener"><b>+ Novo perfil</b><small>Crie a marca no Metricool e conecte as redes lá. Depois clique em Atualizar: ela aparece aqui sozinha.</small></a>
+    <p class="como-funciona"><b>Como funciona</b><br>Cada perfil é uma marca no Metricool. O OS confere a conexão antes de qualquer agente produzir ou agendar.</p></aside>`;
+  const R = P.resumo;
+  const kpis = `<div class="kpis">
+    <div class="kpi ${R.conectadas < R.usadas ? 'amarelo' : 'verde'}"><small>Redes conectadas</small><strong>${R.conectadas} de ${R.usadas}</strong><em>${R.conectadas < R.usadas ? `falta ${esc(P.redes.filter((r) => r.estado === 'desconectado').map((r) => r.nome).join(', '))}` : 'todas as da esteira'}</em></div>
+    <div class="kpi"><small>Seguidores somados</small><strong>${numOuTraco(R.seguidores)}</strong><em class="neutro">${R.ganho_7d == null ? 'atualize para ver' : `${R.ganho_7d >= 0 ? '+' : ''}${num(R.ganho_7d)} em 7 dias`}</em></div>
+    <div class="kpi ${R.posts_7d === 0 ? 'vermelho' : ''}"><small>Posts nos últimos 7 dias</small><strong>${numOuTraco(R.posts_7d)}</strong><em class="neutro">${R.posts_7d === 0 ? (P.esteira.ativa && P.esteira_definida ? 'abaixo da esteira' : 'a esteira ainda não começou') : P.esteira_definida ? `meta: ${P.esteira.por_semana} por semana` : ''}</em></div>
+    <div class="kpi app"><small>Agendados (40 dias)</small><strong>${R.agendados}</strong><em>${R.agendados_rascunho ? `${R.agendados_rascunho} em rascunho` : R.agendados ? 'prontos para sair' : 'nada na agenda'}</em></div></div>`;
+  const IC = { instagram: 'instagram', tiktok: 'tiktok', youtube: 'youtube' };
+  const numeros = (r) => { const n = r.numeros || {};
+    return `<div class="numeros-rede"><div><small>${r.rede === 'youtube' ? 'Inscritos' : 'Seguidores'}</small><b>${numOuTraco(n.seguidores)}${n.ganho_7d != null ? ` <em>${n.ganho_7d >= 0 ? '+' : ''}${num(Math.round(n.ganho_7d))}</em>` : ''}</b></div>
+      <div><small>Views em 7 dias</small><b>${numOuTraco(n.views_7d)}</b></div>
+      <div><small>${r.rede === 'youtube' ? 'Vídeos' : 'Posts'} em 7 dias</small><b>${numOuTraco(n.posts_7d)}</b></div>
+      <div><small>${r.rede === 'youtube' ? 'Agendados' : 'Engajamento'}</small><b>${r.rede === 'youtube' ? r.agendados : n.engajamento == null ? '—' : `${String(Math.round(n.engajamento * 10) / 10).replace('.', ',')}%`}</b></div></div>`; };
+  const cartaoRede = (r) => `<article class="cartao rede-perfil ${r.estado}"><header><span class="ic-rede ${esc(r.rede)}">${icone(IC[r.rede] || 'redes')}</span>
+      <span class="cresce"><b>${esc(r.nome)}</b><small>${esc(r.conta || (r.estado === 'conectado' ? 'conectado na marca' : 'sem conta'))}</small></span><span class="chip ${ESTADO_REDE[r.estado][0]}">${ESTADO_REDE[r.estado][1]}</span></header>
+    ${r.estado === 'conectado' ? (r.numeros ? numeros(r) : '<p class="sub">Sem números ainda: clique em Atualizar.</p>') : `<p class="sub">${esc(r.aviso)}</p>`}
+    ${r.estado === 'conectado' && r.aviso ? `<p class="aviso-rede">${esc(r.aviso)}</p>` : ''}
+    ${r.estado === 'desconectado' ? '<button class="bt tom mini" data-fn="reconectar">Reconectar no Metricool</button>' : ''}</article>`;
+  const I = P.identidade; const E = P.esteira;
+  const faltaI = (v, ex) => v ? esc(v) : `<span class="falta">${esc(ex)}</span>`;
+  const identidade = `<section class="painel"><div class="cab-painel"><h2>Identidade do perfil</h2>${P.identidade_completa ? '<span class="chip pronto">Completa</span>' : '<span class="chip esperando">Falta preencher</span>'}</div>
+    <p class="sub">É o que os agentes leem antes de escrever. Cada perfil tem a sua.</p>
+    <dl class="ficha"><dt>Tom de voz</dt><dd>${faltaI(I.tom, 'ex.: direto, prático, sem jargão')}</dd><dt>Público</dt><dd>${faltaI(I.publico, 'ex.: donos de pequenos negócios')}</dd>
+      <dt>Pilares</dt><dd>${(I.pilares || []).length ? I.pilares.map((x) => `<span class="chip">${esc(x)}</span>`).join(' ') : '<span class="falta">ex.: IA no dia a dia, automação</span>'}</dd>
+      <dt>Assinatura</dt><dd>${faltaI(I.assinatura, 'frase no fim das legendas')}</dd></dl>
+    <button class="bt tom" data-fn="identidade">Editar identidade</button></section>`;
+  const ETAPAS = ['Pauta', 'Roteiro', 'Vídeo', 'Agenda', 'Você confere'];
+  const esteira = `<section class="painel"><div class="cab-painel"><h2>Esteira de produção</h2>${!P.esteira_definida ? '<span class="chip parado">Não definida</span>' : E.ativa ? '<span class="chip trabalhando">Ligada</span>' : '<span class="chip parado">Desligada</span>'}</div>
+    <p class="sub">Defina uma vez. O assistente produz o mês inteiro, agenda tudo no Metricool como rascunho e você só confere o cronograma.</p>
+    <ol class="etapas-esteira">${ETAPAS.map((x, i) => `<li class="${i === 4 ? 'voce' : ''}"><b>${i + 1}</b> ${x}</li>`).join('')}</ol>
+    <dl class="ficha"><dt>Frequência</dt><dd>${P.esteira_definida ? `${E.por_semana} posts por semana` : '<span class="falta">ex.: 3 posts por semana</span>'}</dd><dt>Formatos</dt><dd>${esc(E.formatos)}</dd>
+      <dt>Redes</dt><dd>${E.redes.map((r) => esc(d.nomes[r] || r)).join(', ')}</dd></dl>
+    <div class="acoes-linha">${P.esteira_definida ? `<button class="bt pri" data-fn="produzir" ${E.ativa ? '' : 'disabled'}>Produzir o próximo mês</button><button class="bt" data-fn="esteira">Ajustar esteira</button>` : '<button class="bt pri" data-fn="esteira">Definir esteira</button>'}</div></section>`;
+  const agenda = P.agendados.length ? `<h2>Próximos na agenda do Metricool</h2><div class="lista">${P.agendados.slice(0, 8).map((a) => { const parado = a.redes.some((r) => (P.redes.find((x) => x.rede === r) || {}).estado !== 'conectado');
+    return `<div class="linha-item ${parado ? 'achado alto' : ''}"><small class="neutro" style="min-width:110px">${quandoBr(a.quando)}</small><div class="cresce"><b>${esc(a.texto.split('\n')[0] || 'post sem texto')}</b>
+      <small>${esc(a.redes.map((r) => d.nomes[r] || r).join(', '))}${a.rascunho ? ' · rascunho' : ''}${parado ? ' · não vai sair: a rede está desconectada' : ''}</small></div></div>`; }).join('')}</div>` : '';
+  j.corpo.innerHTML = `<div class="pagina perfis"><div class="acoes topo"><button class="bt pri" data-acao="perfis_atualizar">${icone('atualizar')} Atualizar</button><button class="bt" data-abrir="conexoes">Conexões</button></div>
+    <div class="perfis-layout">${lista}<div class="detalhe-perfil">
+    <div class="cab-perfil"><span class="avatar-perfil grande">${esc(iniciais(P.nome))}</span><div class="cresce"><h1>${esc(P.nome)}</h1>
+      <p class="sub">Marca no Metricool: ${esc(P.marca.nome || P.id)}${P.marca.fuso ? ` · fuso ${esc(P.marca.fuso.replace(/^.*\//, '').replace(/_/g, ' '))}` : ''} · ${esc(P.saude_quando ? `números de ${quandoBr(P.saude_quando)}` : atualizado)}</p></div></div>
+    ${faixaAvisos(P.alertas, `${P.alertas.length} alertas`)}
+    ${kpis}
+    <h2>Redes do perfil</h2><div class="grade-redes">${P.redes.map(cartaoRede).join('')}</div>
+    <div class="grade2" style="margin-top:16px">${identidade}${esteira}</div>
+    ${agenda}</div></div></div>`;
 }
 
 // ------------------------------------------------------------------ apps: tendências e concorrentes
