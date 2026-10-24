@@ -2,7 +2,10 @@
 
 Mostra a versão instalada, procura versão nova no GitHub (botão ou sozinha ao abrir o Ciello OS),
 mostra o que mudou e instala com um clique. Os seus dados não são tocados (ver atualizacao.py).
+Com --reparar (atalho "Reinstalar dependências"), roda o instalador/preparar.ps1 escondido e mostra o andamento aqui.
 """
+import json
+import subprocess
 import sys
 import threading
 import tkinter as tk
@@ -18,8 +21,12 @@ ICONE = Path(__file__).resolve().parent / "marca" / "ciello.ico"
 CANAIS = {"estavel": "Estável (versões publicadas)", "teste": "Teste (último commit da main, antes de virar versão)"}
 
 
+RAIZ = Path(__file__).resolve().parent.parent
+ETAPAS = 11  # as etapas "@@ETAPA" do preparar.ps1
+
+
 class Janela:
-    def __init__(self, raiz_tk, procurar_ja=False):
+    def __init__(self, raiz_tk, procurar_ja=False, reparar_ja=False):
         self.tk = raiz_tk
         self.info = None
         raiz_tk.title("Atualizações do Ciello OS")
@@ -71,9 +78,13 @@ class Janela:
         self.bt_aplicar.pack(side="left", padx=8)
         self.bt_pagina = tk.Button(botoes, text="Ver no GitHub", command=self.pagina, relief="flat", padx=10, pady=6)
         self.bt_pagina.pack(side="right")
+        self.bt_reparar = tk.Button(botoes, text="Reinstalar dependências", command=self.reparar, relief="flat", padx=10, pady=6)
+        self.bt_reparar.pack(side="right", padx=8)
 
         self.pintar_status()
-        if procurar_ja:
+        if reparar_ja:
+            self.tk.after(300, self.reparar)
+        elif procurar_ja:
             self.tk.after(300, self.procurar)
 
     # ------------------------------------------------------------ tela
@@ -110,6 +121,7 @@ class Janela:
     def ocupado(self, sim):
         estado = "disabled" if sim else "normal"
         self.bt_procurar.configure(state=estado)
+        self.bt_reparar.configure(state=estado)
         if sim:
             self.bt_aplicar.configure(state="disabled")
             self.barra.pack(fill="x", pady=(8, 0))
@@ -166,10 +178,53 @@ class Janela:
             self.tk.after(0, fim)
         threading.Thread(target=trabalho, daemon=True).start()
 
+    def reparar(self):
+        """Baixa de novo o que faltar (Python, bibliotecas, FFmpeg, Node, Claude Code...), sem janela de CMD."""
+        self.ocupado(True)
+        self.status.configure(text="Reinstalando as dependências... pode levar alguns minutos.", fg=CARVAO)
+        self.escrever("")
+        try:
+            comps = set(json.loads((RAIZ / "estado" / "instalacao.json").read_text(encoding="utf-8-sig")).get("componentes") or [])
+        except (OSError, ValueError, AttributeError):
+            comps = {"base", "video"}
+        opcoes = (["-Voz"] if "voz" in comps else []) + ([] if "video" in comps else ["-SemVideo"])
+        cmd = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
+               str(RAIZ / "instalador" / "preparar.ps1"), "-Pasta", str(RAIZ), "-SemPausa", *opcoes]
+
+        def linha(t):
+            if t.startswith("@@ETAPA "):
+                partes = t.split(" ", 3)
+                n = partes[1] if len(partes) > 1 else "?"
+                texto = partes[3] if len(partes) > 3 else ""
+                self.tk.after(0, lambda: self.status.configure(text=f"Etapa {n} de {ETAPAS}: {texto}", fg=CARVAO))
+            elif t.strip():
+                self.tk.after(0, lambda: self.escrever(t.rstrip(), limpar=False))
+
+        def trabalho():
+            try:
+                proc = subprocess.Popen(cmd, cwd=RAIZ, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                for bruto in proc.stdout:
+                    linha(bruto.decode("utf-8", errors="replace"))
+                codigo = proc.wait()
+            except OSError as e:
+                codigo = -1
+                linha(f"Não consegui abrir o PowerShell: {e}")
+
+            def fim():
+                self.ocupado(False)
+                if codigo == 0:
+                    self.status.configure(text="Pronto! As dependências estão em dia. Abra o Ciello OS pelo ícone.", fg="#1F8A4C")
+                else:
+                    self.status.configure(text=f"Não terminou (código {codigo}). O log completo está em "
+                                               f"{RAIZ / 'estado' / 'instalacao.log'}.", fg="#B5442F")
+            self.tk.after(0, fim)
+        threading.Thread(target=trabalho, daemon=True).start()
+
 
 def main():
     raiz_tk = tk.Tk()
-    Janela(raiz_tk, procurar_ja="--procurar" in sys.argv)
+    Janela(raiz_tk, procurar_ja="--procurar" in sys.argv, reparar_ja="--reparar" in sys.argv)
     raiz_tk.mainloop()
 
 

@@ -1,6 +1,6 @@
 """Terminal do Claude dentro do Ciello OS: o Claude Code roda num pseudo-terminal e a janela do OS (xterm.js) mostra.
 
-  - Windows: pywinpty (ConPTY), instalado pelo instalar.cmd (central/requirements.txt)
+  - Windows: pywinpty (ConPTY), instalado pelo instalador (central/requirements.txt)
   - Linux/macOS: o pty da biblioteca padrão (usado nos testes)
 
 Cada terminal tem um id, guarda o fim da saída (para a janela reabrir mostrando o que já passou) e repassa o que sai

@@ -10,14 +10,17 @@
    - **Padrão:** Ciello OS + Claude Code + Estúdio de Vídeo.
    - **Completa:** tudo isso + **Estúdio de Voz** (Kokoro, Chatterbox e Whisper, uns 3 GB a mais).
    - **Personalizada:** marque só o que quiser.
-3. No fim abre uma janela azul que baixa e instala as dependências, sem pedir nada: Python 3.12, Git, FFmpeg, Node.js,
-   Claude Code, as bibliotecas do Python (`.venv`), o Remotion/HyperFrames, o buscador do SDR e, se marcou, a voz.
+   Se quiser, marque **Rotinas automáticas** (o Bom dia às 7h e o piloto da rede social de hora em hora).
+3. No fim o próprio instalador baixa e instala as dependências, sem abrir janela de CMD nem de Python: a tela
+   **Preparando o seu computador** mostra a etapa e a barra de andamento (Python 3.12, Git, FFmpeg, Node.js, Claude Code,
+   as bibliotecas do Python no `.venv`, o Remotion/HyperFrames, o buscador do SDR e, se marcou, a voz).
    Demora de 10 a 30 minutos na primeira vez. O log fica em `estado\instalacao.log`.
-4. Pronto: o ícone **Ciello OS** aparece na área de trabalho e no menu Iniciar. Ele liga o servidor (janela minimizada
-   na barra de tarefas; fechar essa janela desliga tudo) e abre o Ciello OS numa janela própria.
+4. Pronto: o ícone **Ciello OS** aparece na área de trabalho e no menu Iniciar. Ele liga o servidor escondido (o que ele
+   escreve fica em `estado\servidor.log`) e abre o Ciello OS numa janela própria. Para desligar: menu Iniciar do
+   Ciello OS, botão **Desligar** (o ícone de energia).
 
-No menu Iniciar, na pasta **Ciello OS**, também ficam: **Atualizações do Ciello OS**, **Reinstalar dependências** e
-**Desinstalar**. Desinstalar apaga o programa e o que foi baixado (`.venv`, `node_modules`), mas **mantém os seus dados**
+No menu Iniciar, na pasta **Ciello OS**, também ficam: **Atualizações do Ciello OS**, **Reinstalar dependências** (abre
+a janela de Atualizações e mostra o andamento lá, sem CMD) e **Desinstalar**. Desinstalar apaga o programa e o que foi baixado (`.venv`, `node_modules`), mas **mantém os seus dados**
 (`estado`, `comercial`, `financeiro`, `founder`, `audio`) na pasta.
 
 ## Atualizações
@@ -50,10 +53,12 @@ Para só gerar o `.exe` sem publicar: **Actions → Instalador → Run workflow*
 |---|---|
 | `instalador/ciello.iss` | Assistente de instalação (Inno Setup): pasta, componentes, atalhos com o ícone |
 | `instalador/preparar.ps1` | Baixa e instala as dependências (winget, com download direto de reserva) |
-| `instalador/lancador.pyw` | O que o ícone abre: procura atualização e liga o Ciello OS |
+| `instalador/lancador.pyw` | O que o ícone abre: procura atualização e liga o Ciello OS sem janela |
+| `instalador/rotinas.pyw` | Liga/desliga o Bom dia (7h) e o piloto (de hora em hora) no Agendador do Windows, sem janela |
 | `instalador/atualizacao.py` | Gerenciador de atualizações (GitHub Releases, branch de teste ou Git) |
 | `instalador/atualizador.pyw` | Janela de Atualizações do Windows |
 | `instalador/gerar_icone.py` | Gera `instalador/marca/ciello.ico` e as imagens do instalador (logo sobre o Azul profundo `#263A59`) |
 | `VERSION` | Versão instalada; a tag da Release tem de bater com ela |
 
-Os `.cmd` antigos (`instalar.cmd`, `Ciello.cmd`, `testar.cmd`) continuam funcionando para quem clonou a pasta.
+Não há mais `.cmd` (`instalar`, `Ciello`, `testar`, `agendar`): tudo passa pelo instalador e pelo ícone. Quem atualiza
+um PC antigo tem esses arquivos apagados da pasta. Na pasta clonada, veja o README ("Pela pasta clonada").

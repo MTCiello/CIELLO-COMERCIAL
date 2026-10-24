@@ -2,13 +2,15 @@
 
 1. Se o Ciello OS já está aberto, só traz a janela de novo.
 2. De tempos em tempos (padrão: 12 h) procura atualização no GitHub; se tiver, pergunta se quer atualizar.
-3. Liga o servidor (central/escritorio/servidor.py) numa janela minimizada da barra de tarefas
-   e abre o Ciello OS numa janela própria do Edge/Chrome. Fechar a janela do servidor desliga tudo.
+3. Liga o servidor (central/escritorio/servidor.py) escondido, sem janela de CMD, e o servidor abre o Ciello OS numa
+   janela própria do Edge/Chrome. Para desligar: menu Iniciar do Ciello OS, botão Desligar. O que o servidor escreve
+   fica em estado/servidor.log.
 """
 import os
 import socket
 import subprocess
 import sys
+import time
 import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox
@@ -50,17 +52,33 @@ def janela_do_app(url):
 
 
 def ligar_servidor():
-    env = {**os.environ, "PYTHONUTF8": "1"}
+    """python.exe com CREATE_NO_WINDOW: o console existe, mas sem janela, e o que o servidor roda (scripts, Claude Code,
+    ffmpeg) herda esse console escondido em vez de abrir janela preta."""
+    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"}
     servidor = RAIZ / "central" / "escritorio" / "servidor.py"
-    if os.name == "nt":
-        si = subprocess.STARTUPINFO()
-        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        si.wShowWindow = 7  # SW_SHOWMINNOACTIVE: fica minimizada na barra de tarefas
-        cmd = f'title Ciello OS (feche esta janela para desligar) && "{python_console()}" "{servidor}"'
-        subprocess.Popen(["cmd", "/c", cmd], cwd=RAIZ, env=env, startupinfo=si,
-                         creationflags=subprocess.CREATE_NEW_CONSOLE)
-    else:
-        subprocess.Popen([python_console(), str(servidor)], cwd=RAIZ, env=env)
+    log = RAIZ / "estado" / "servidor.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("w", encoding="utf-8") as saida:
+        subprocess.Popen([python_console(), str(servidor)], cwd=RAIZ, env=env, stdin=subprocess.DEVNULL, stdout=saida,
+                         stderr=subprocess.STDOUT, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    for _ in range(60):  # até 30 s: na primeira vez o Windows Defender confere o Python
+        if no_ar():
+            return True
+        time.sleep(0.5)
+    return False
+
+
+def avisar_que_nao_abriu():
+    raiz_tk = tk.Tk()
+    raiz_tk.withdraw()
+    try:
+        raiz_tk.iconbitmap(default=str(AQUI / "marca" / "ciello.ico"))
+    except tk.TclError:
+        pass
+    messagebox.showerror("Ciello OS", "O Ciello OS não ligou.\n\nO motivo fica anotado em "
+                         f"{RAIZ / 'estado' / 'servidor.log'}.\n\nSe faltar alguma biblioteca, abra no menu Iniciar: "
+                         "Ciello OS > Reinstalar dependências.", parent=raiz_tk)
+    raiz_tk.destroy()
 
 
 def perguntar_atualizacao():
@@ -94,7 +112,8 @@ def main():
         perguntar_atualizacao()
     except Exception:  # noqa: BLE001  atualização nunca impede o Ciello OS de abrir
         pass
-    ligar_servidor()
+    if not ligar_servidor():
+        avisar_que_nao_abriu()
 
 
 if __name__ == "__main__":
