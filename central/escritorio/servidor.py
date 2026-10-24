@@ -47,6 +47,7 @@ sys.path.insert(0, str(AQUI.parent))
 sys.path.insert(0, str(RAIZ / "instalador"))
 import status  # noqa: E402
 import atendimento  # noqa: E402
+import biblioteca  # noqa: E402
 import briefing  # noqa: E402
 import calendario  # noqa: E402
 import conexoes  # noqa: E402
@@ -81,7 +82,8 @@ TOKEN = secrets.token_urlsafe(24)
 TELA = WEB / "escritorio"  # build da tela do escritório (escritorio/webview-ui: npx vite build)
 TIPOS = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8",
          ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".woff2": "font/woff2", ".mp4": "video/mp4",
-         ".ttf": "font/ttf", ".wav": "audio/wav", ".ico": "image/x-icon", ".json": "application/json", ".webmanifest": "application/manifest+json"}
+         ".ttf": "font/ttf", ".wav": "audio/wav", ".ico": "image/x-icon", ".json": "application/json", ".webmanifest": "application/manifest+json",
+         ".jpeg": "image/jpeg", ".webm": "audio/webm", ".ogg": "audio/ogg", ".mp3": "audio/mpeg", ".md": "text/markdown; charset=utf-8"}
 sala = None  # o escritório (nucleo.sala.Sala), criado no main
 terminais = terminal.Terminais(RAIZ)  # terminais do Claude dentro do OS (janela "Claude Code")
 atexit.register(terminais.fechar_todos)
@@ -396,7 +398,7 @@ def salvar_empresa(dados):
 APPS = {"escritorio": app_escritorio, "conexoes": app_conexoes, "redes": app_redes, "rumo": app_rumo, "voz": estudio_voz.estado, "video": app_video, "atendimento": app_atendimento, "plano": plano.para_janela, "briefing": app_briefing, "financeiro": app_financeiro, "comercial": app_comercial,
         "conteudo": app_conteudo, "concorrentes": app_concorrentes, "tendencias": app_tendencias,
         "anuncios": lambda: {"campanhas": campanhas(), "resumo": kpis()["anuncios"]}, "atualizacoes": atualizacao.resumo_status,
-        "dados": app_dados}
+        "dados": app_dados, "biblioteca": biblioteca.listar}
 
 
 # ---------------------------------------------------------------- execução das ações
@@ -438,6 +440,8 @@ def executar(rotulo, agente, args, acao="tarefa"):
 # ---------------------------------------------------------------- operação sem o Claude (janelas Financeiro, Comercial, Conteúdo, Anúncios)
 
 def operar(op, dados):
+    if op == "biblioteca_mostrar":
+        return biblioteca.mostrar(str(dados.get("rel") or ""))
     if op == "voz_testar":
         try:
             args, nome = estudio_voz.args_teste(dados)
@@ -589,6 +593,36 @@ class Painel(BaseHTTPRequestHandler):
             return self._json({"erro": "não encontrado"}, 404)
         self._enviar(alvo.read_bytes(), TIPOS[alvo.suffix.lower()])
 
+    def _midia(self, alvo):
+        """Vídeo e áudio aos pedaços (Range): o player pula para qualquer ponto sem baixar o arquivo inteiro."""
+        if alvo is None or alvo.suffix.lower() not in TIPOS:
+            return self._json({"erro": "não encontrado"}, 404)
+        tam = alvo.stat().st_size
+        ini, fim = 0, tam - 1
+        faixa = re.match(r"bytes=(\d*)-(\d*)$", self.headers.get("Range") or "")
+        if faixa and (faixa[1] or faixa[2]):
+            if faixa[1]:
+                ini, fim = int(faixa[1]), min(int(faixa[2]) if faixa[2] else tam - 1, tam - 1)
+            else:  # bytes=-N: os últimos N
+                ini = max(tam - int(faixa[2]), 0)
+            if ini > fim or ini >= tam:
+                self.send_response(416)
+                self.send_header("Content-Range", f"bytes */{tam}")
+                return self.end_headers()
+        self.send_response(206 if faixa else 200)
+        self.send_header("Content-Type", TIPOS[alvo.suffix.lower()])
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(fim - ini + 1))
+        if faixa:
+            self.send_header("Content-Range", f"bytes {ini}-{fim}/{tam}")
+        self.end_headers()
+        with alvo.open("rb") as f:
+            f.seek(ini)
+            falta = fim - ini + 1
+            while falta > 0 and (bloco := f.read(min(1 << 20, falta))):
+                self.wfile.write(bloco)
+                falta -= len(bloco)
+
     def _tela(self, rel):
         """A tela do escritório (build de escritorio/webview-ui). Ela mesma avisa a área de trabalho do clique num
         personagem e obedece à engrenagem e ao "centralizar" (src/ciello/ na tela)."""
@@ -672,7 +706,13 @@ class Painel(BaseHTTPRequestHandler):
         if caminho.startswith("/web/"):
             return self._arquivo(WEB, caminho[5:])
         if caminho.startswith("/midia/"):
-            return self._arquivo(RAIZ / "midia", urllib.request.unquote(caminho[7:]))
+            base = (RAIZ / "midia").resolve()
+            alvo = (base / urllib.request.unquote(caminho[7:])).resolve()
+            return self._midia(alvo if alvo.is_relative_to(base) and alvo.is_file() else None)
+        if caminho.startswith("/api/biblioteca/arquivo/"):
+            return self._midia(biblioteca.caminho(urllib.request.unquote(caminho[24:])))
+        if caminho.startswith("/api/biblioteca/texto/"):
+            return self._json(biblioteca.ler(urllib.request.unquote(caminho[22:])))
         if caminho.startswith("/api/voz/arquivo/"):
             alvo = estudio_voz.arquivo(urllib.request.unquote(caminho[17:]))
             return self._enviar(alvo.read_bytes(), TIPOS[".wav"]) if alvo else self._json({"erro": "não encontrado"}, 404)

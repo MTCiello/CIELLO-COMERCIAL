@@ -46,6 +46,19 @@ class TesteCielloOS(unittest.TestCase):
         self.assertEqual(self.pedir("GET", "/web/../servidor.py")[0], 404)  # nada fora da pasta web
         self.assertEqual(self.pedir("GET", "/midia/../AGENTE.md")[0], 404)
 
+    def test_video_da_biblioteca_sai_aos_pedacos(self):
+        with tempfile.TemporaryDirectory() as d:
+            v = Path(d) / "midia" / "final" / "2026-10-24-x.mp4"
+            v.parent.mkdir(parents=True)
+            v.write_bytes(bytes(range(256)) * 4)
+            with mock.patch.object(servidor.biblioteca.dados, "pasta_dados", lambda: Path(d)):
+                cod, dado = self.pedir("GET", "/api/biblioteca/arquivo/midia/final/2026-10-24-x.mp4", cabecalhos={"Range": "bytes=10-19"})
+                self.assertEqual((cod, dado), (206, bytes(range(10, 20))))
+                cod, dado = self.pedir("GET", "/api/biblioteca/arquivo/midia/final/2026-10-24-x.mp4")
+                self.assertEqual((cod, len(dado)), (200, 1024))
+                self.assertEqual(self.pedir("GET", "/api/biblioteca/arquivo/midia/final/2026-10-24-x.mp4", cabecalhos={"Range": "bytes=5000-"})[0], 416)
+                self.assertEqual(self.pedir("GET", "/api/biblioteca/arquivo/../servidor.py")[0], 404)
+
     def test_apis_dos_apps(self):
         for app in servidor.APPS:
             cod, dado = self.pedir("GET", f"/api/app/{app}")

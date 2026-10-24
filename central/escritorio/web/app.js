@@ -29,6 +29,7 @@ const SVG = {
   balao: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
   video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
   caixa: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  biblioteca: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M16 4v5"/><path d="M10 12.5v5l4-2.5z"/>',
   microfone: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>',
   reticencias: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   min: '<path d="M2 6h8"/>', max: '<rect x="2" y="2" width="8" height="8"/>', rest: '<rect x="2" y="4" width="6" height="6"/><path d="M4 4V2h6v6H8"/>', fechar: '<path d="M2 2l8 8M10 2l-8 8"/>',
@@ -54,13 +55,14 @@ const APPS = {
   atividade: { titulo: 'Atividade', icone: 'atividade', cor: 'linear-gradient(135deg,#7E8AA1,#4B566B)', ux: 'compacta', w: 520, h: 580, render: renderAtividade, cada: 3000 },
   verificar: { titulo: 'Verificação', icone: 'verificar', cor: 'linear-gradient(135deg,#5BC0A0,#2D8C70)', acao: 'verificar' },
   dados: { titulo: 'Boas-vindas e seus dados', icone: 'caixa', cor: 'linear-gradient(135deg,#C9A36A,#8A6A3B)', ux: 'leitura', w: 760, h: 680, render: renderDados },
+  biblioteca: { titulo: 'Biblioteca', icone: 'biblioteca', cor: 'linear-gradient(135deg,#5AA9E6,#2D5F99)', ux: 'painel', w: 1080, h: 740, render: renderBiblioteca, estatico: true },
   atualizacoes: { titulo: 'Atualizações', icone: 'atualizar', cor: 'linear-gradient(135deg,#3A5582,#263A59)', ux: 'compacta', w: 620, h: 520, render: renderAtualizacoes },
 };
 // menu Iniciar por objetivo: o que você quer fazer agora
-const GRUPOS = [['Criar', ['redes', 'video', 'conteudo', 'voz', 'tendencias', 'concorrentes']], ['Vender', ['comercial', 'atendimento', 'anuncios']],
+const GRUPOS = [['Criar', ['biblioteca', 'redes', 'video', 'conteudo', 'voz', 'tendencias', 'concorrentes']], ['Vender', ['comercial', 'atendimento', 'anuncios']],
   ['Gerir', ['briefing', 'financeiro', 'objetivos']], ['Sistema', ['dados', 'conexoes', 'equipe', 'atividade', 'verificar', 'atualizacoes']]];
 // no dock, como no Mac: os apps do dia a dia ficam sempre lá; os outros aparecem enquanto estão abertos
-const NO_DOCK = ['briefing', 'financeiro', 'comercial', 'atendimento', 'conteudo', 'video', 'voz', 'tendencias'];
+const NO_DOCK = ['briefing', 'financeiro', 'comercial', 'atendimento', 'conteudo', 'video', 'voz', 'biblioteca', 'tendencias'];
 
 const NOMES = { gerente: 'Gerente', 'pesquisador-mercado': 'Pesquisador de Mercado', roteirista: 'Roteirista', 'produtor-video': 'Produtor de Vídeo',
   'produtor-imagem': 'Produtor de Imagem', postagem: 'Postagem', analista: 'Analista', 'gestor-anuncios': 'Gestor de Anúncios', sdr: 'SDR', closer: 'Closer',
@@ -1872,6 +1874,56 @@ function renderTerminal(j) {
   j.el.addEventListener('pointerdown', () => setTimeout(() => term.focus(), 0));
   j.aoFechar = () => { obs.disconnect(); ws.close(); term.dispose(); api('/api/terminal/fechar', { id }).catch(() => {}); delete SALVO.terminais[id]; salvar(); };
 }
+// ------------------------------------------------------------------ apps: biblioteca (central/biblioteca.py)
+// Tudo o que a equipe já produziu num lugar só: vídeos, capas, roteiros, pesquisas e vozes, para ver, ouvir e achar a pasta.
+const SECOES_BIB = [['videos', 'Vídeos'], ['capas', 'Capas'], ['roteiros', 'Roteiros'], ['pesquisas', 'Pesquisas'], ['vozes', 'Vozes']];
+const tamanho = (b) => (b >= 1e6 ? `${(b / 1e6).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1e3))} KB`);
+const urlBib = (rel) => `/api/biblioteca/arquivo/${rel.split('/').map(encodeURIComponent).join('/')}`;
+function roteiroLegivel(txt) {
+  let d; try { d = JSON.parse(txt); } catch { return `<pre class="console">${esc(txt)}</pre>`; }
+  const cenas = (d.scenes || []).map((c) => `<div class="cena-bib"><small>${esc(c.kicker || c.type || '')}</small><p>${esc(c.say || '')}</p></div>`).join('');
+  return `${cenas || '<div class="vazio">Roteiro sem cenas ainda.</div>'}${d.legenda ? `<div class="cena-bib legenda"><small>Legenda</small><p>${esc(d.legenda).replace(/\n/g, '<br>')}</p></div>` : ''}`;
+}
+async function renderBiblioteca(j) {
+  const d = await api('/api/app/biblioteca'); const S = d.secoes;
+  j.busca = j.busca || '';
+  const secoes = abas(j, SECOES_BIB.map(([k, r]) => [k, r, (S[k] || []).length]));
+  const todos = S[j.aba] || [];
+  const filtro = j.busca.trim().toLowerCase();
+  const itens = todos.filter((x) => !filtro || `${x.titulo} ${x.nome} ${x.grupo}`.toLowerCase().includes(filtro));
+  const sel = itens.find((x) => x.rel === j.sel) || itens[0];
+  j.fns = {
+    buscar: (_, el) => { j.busca = el.value; clearTimeout(j.tBusca); j.tBusca = setTimeout(() => { desenhar(j, true).then(() => { const b = $('[name=busca-bib]', j.corpo); if (b) { b.focus(); b.setSelectionRange(b.value.length, b.value.length); } }); }, 250); },
+    ver: ({ rel }) => { j.sel = rel; j.texto = null; desenhar(j, true); },
+    pasta: ({ rel }) => rapido('biblioteca_mostrar', { rel }, 'Pasta aberta'),
+    atualizar: () => desenhar(j, true),
+  };
+  const meta = (x) => `<small>${esc(x.grupo)} · ${ddmm(x.data)} · ${tamanho(x.tamanho)}</small>`;
+  const botaoPasta = (x) => `<button class="bt mini" data-fn="pasta" data-rel="${esc(x.rel)}">Mostrar na pasta</button>`;
+  const topo = `<div class="acoes topo"><button class="bt" data-fn="atualizar">${icone('atualizar')} Atualizar</button><button class="bt" data-abrir="video">Estúdio de Vídeo</button></div>`;
+  const cab = `<h1>Biblioteca</h1><p class="sub">Tudo o que a equipe já produziu, do mais novo para o mais antigo. Nada aqui é publicado ou apagado.</p>`;
+  const busca = `<div class="filtros busca-bib"><input name="busca-bib" type="search" placeholder="Buscar por título ou arquivo" value="${esc(j.busca)}" data-mudar="buscar" aria-label="Buscar na Biblioteca"></div>`;
+  const vazioSecao = { videos: 'Nenhum vídeo ainda. Gere um rascunho no Estúdio de Vídeo ou peça um vídeo ao Gerente.', capas: 'Nenhuma capa ainda.', roteiros: 'Nenhum roteiro ainda.', pesquisas: 'Nenhuma pesquisa ainda. Rode o radar em Tendências.', vozes: 'Nenhum áudio ainda. Teste uma voz no Estúdio de Voz.' }[j.aba];
+  let conteudoHtml;
+  if (!itens.length) conteudoHtml = `<div class="vazio">${filtro ? 'Nada com essa busca.' : vazioSecao}</div>`;
+  else if (j.aba === 'videos') {
+    conteudoHtml = `<div class="grade-bib videos">${itens.map((x) => `<figure class="item-bib"><video controls preload="metadata" src="${urlBib(x.rel)}#t=0.5"></video>
+      <figcaption><b title="${esc(x.nome)}">${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
+  } else if (j.aba === 'capas') {
+    conteudoHtml = `<div class="grade-bib capas">${itens.map((x) => `<figure class="item-bib"><a href="${urlBib(x.rel)}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img loading="lazy" src="${urlBib(x.rel)}" alt="${esc(x.titulo)}"></a>
+      <figcaption><b>${esc(x.titulo)}</b>${meta(x)}${botaoPasta(x)}</figcaption></figure>`).join('')}</div>`;
+  } else if (j.aba === 'vozes') {
+    conteudoHtml = `<div class="lista">${itens.map((x) => `<div class="linha-item audio-bib"><div class="cresce"><b>${esc(x.titulo)}</b>${meta(x)}${x.tamanho < 20000 ? '<small class="alerta-bib">Quase vazio: a gravação pode não ter captado o microfone.</small>' : ''}</div>
+      <audio controls preload="none" src="${urlBib(x.rel)}"></audio>${botaoPasta(x)}</div>`).join('')}</div>`;
+  } else {
+    if (sel && j.texto?.rel !== sel.rel) { const t = await api(`/api/biblioteca/texto/${sel.rel.split('/').map(encodeURIComponent).join('/')}`); j.texto = { rel: sel.rel, ...t }; }
+    const corpo = !j.texto?.ok ? '<div class="vazio">Não deu para abrir este arquivo.</div>' : j.texto.tipo === 'json' ? roteiroLegivel(j.texto.texto) : `<div class="md">${md(j.texto.texto)}</div>`;
+    conteudoHtml = `<div class="lista-detalhe"><div class="lista-pautas" role="listbox" aria-label="Arquivos">${itens.map((x) => `<button class="item-pauta ${x.rel === sel.rel ? 'on' : ''}" role="option" aria-selected="${x.rel === sel.rel}" data-fn="ver" data-rel="${esc(x.rel)}"><span><b>${esc(x.titulo)}</b>${meta(x)}</span></button>`).join('')}</div>
+      <article class="detalhe-pauta"><div class="cab-bib"><div><small>${esc(sel.grupo)} · <code>${esc(sel.rel)}</code></small><h2>${esc(sel.titulo)}</h2></div>${botaoPasta(sel)}</div>${corpo}</article></div>`;
+  }
+  j.corpo.innerHTML = `<div class="pagina larga">${topo}${cab}${secoes}${busca}${conteudoHtml}</div>`;
+}
+
 async function renderAtividade(j) {
   j.corpo.innerHTML = `<div class="pagina"><h1>Atividade</h1><p class="sub">O que cada agente e cada ferramenta fez, do mais novo para o mais antigo.</p><div class="lista">${estadoCache.eventos.map((e) =>
     `<div class="linha-item" data-abrir="agente:${esc(e.agente)}" style="cursor:pointer">${sprite(e.agente, 20)}<div class="cresce"><b>${esc(nome(e.agente))}</b><small>${esc(e.tarefa || '')}</small></div><small>${esc(e.ts.slice(11, 16))}</small>${chipEstado(e.estado)}</div>`).join('') || '<div class="vazio">Sem atividade ainda.</div>'}</div></div>`;
