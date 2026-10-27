@@ -849,7 +849,7 @@ async function renderBriefing(j) {
   const texto = $('.objetivo-texto', j.corpo)?.value || '';
   const h = new Date().getHours(); const saud = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
   const data = new Date(`${d.data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  const dono = (x) => (NOMES[x.dono] && x.dono !== 'você') ? `<a data-abrir="agente:${esc(x.dono)}" style="cursor:pointer">${sprite(x.dono, 16)} ${esc(nome(x.dono))}</a>` : `${esc(nome(x.dono))}`;
+  const dono = (x) => (NOMES[x.dono] && x.dono !== 'você') ? `<button type="button" class="bt-texto" data-abrir="agente:${esc(x.dono)}">${sprite(x.dono, 16)} ${esc(nome(x.dono))}</button>` : `${esc(nome(x.dono))}`;
   const top = d.itens.slice(0, 3); const resto = d.itens.slice(3);
   const botoesItem = (x, i) => `${destinoDoTexto(x.texto) ? `<button class="bt mini" data-fn="ir" data-i="${i}" title="Abre a janela certa">Abrir</button>` : ''}<button class="bt mini fantasma" data-fn="hojeNao" data-i="${i}" title="Some daqui até amanhã">Hoje não</button>`;
   j.corpo.innerHTML = `<div class="saudacao"><img src="/web/logo-marfim.svg" alt=""><div><h1>${saud}${EMPRESA.responsavel ? `, ${esc(EMPRESA.responsavel)}` : ''}</h1><p>${esc(data)}</p></div></div>
@@ -858,7 +858,7 @@ async function renderBriefing(j) {
   <h2>As 3 prioridades de hoje</h2><div class="lista">${top.map((x, i) => `<div class="prioridade"><span class="num">${i + 1}</span><div class="txt md">${md(x.texto).replace(/^<p>|<\/p>$/g, '')}<small>com ${dono(x)}</small></div><div class="acoes-item">${botoesItem(x, i)}</div></div>`).join('') || '<div class="vazio">Nada urgente. Bom dia para gravar conteúdo ou prospectar.</div>'}</div>
   <h2>Números</h2><div class="cartao md">${md(d.numeros.join('\n'))}</div>
   ${resto.length ? `<h2>Pendências</h2><div class="lista">${resto.map((x, k) => `<div class="linha-item"><div class="cresce md">${md(x.texto).replace(/^<p>|<\/p>$/g, '')}</div><small>${dono(x)}</small><div class="acoes-item">${botoesItem(x, k + 3)}</div></div>`).join('')}</div>` : ''}
-  ${adiados.length ? `<p class="sub">${adiados.length} item(ns) deixado(s) para amanhã · <a href="#" data-fn="mostrarAdiados">mostrar de novo</a></p>` : ''}
+  ${adiados.length ? `<p class="sub">${adiados.length} item(ns) deixado(s) para amanhã · <button type="button" class="bt-texto" data-fn="mostrarAdiados">Mostrar de novo</button></p>` : ''}
   <div class="acoes"><button class="bt pri" data-acao="briefing">${icone('play')} Atualizar briefing</button><button class="bt" data-acao="placar">Placar da semana</button><button class="bt" data-abrir="equipe">Equipe</button></div></div>`;
 }
 
@@ -1173,7 +1173,7 @@ function rumoCorpo(j, r) {
     ${ritmoFaixa(m)}
     ${m.avisos.length ? `<div class="lista" style="margin-top:8px">${m.avisos.map((a) => `<div class="linha-item achado medio"><span class="chip esperando">atenção</span><div class="cresce"><small style="white-space:normal">${esc(a)}</small></div></div>`).join('')}</div>` : ''}
     <details class="taxas"><summary>De onde vêm as taxas do funil</summary><table class="tab"><tr><th>Passo</th><th>Taxa</th><th>Origem</th><th>Seus números</th></tr>${Object.values(m.taxas).map((t) => `<tr><td>${esc(t.nome)}</td><td><b>${pctBr(t.valor)}</b></td><td><span class="chip ${ORIGEM[t.origem]}">${esc(t.origem)}</span></td><td>${esc(t.dados)}</td></tr>`).join('')}</table>
-      <p class="sub">A estimativa vira a sua taxa assim que houver dados suficientes (registre as abordagens, demos e testes no Comercial e no Financeiro). Para usar outro número, <a href="#" data-fn="meta">mude na meta</a>.</p></details>
+      <p class="sub">A estimativa vira a sua taxa assim que houver dados suficientes (registre as abordagens, demos e testes no Comercial e no Financeiro). Para usar outro número, <button type="button" class="bt-texto" data-fn="meta">mude na meta</button>.</p></details>
     <div class="acoes"><button class="bt" data-fn="meta">Mudar meta ou taxas</button><button class="bt pri" data-fn="crescer">Montar o plano de 90 dias com a equipe</button></div>`
     : `<div class="passos"><h2>Qual é a meta?</h2><p class="sub">Diga quantos clientes de CRM quer ter e até quando. O OS faz a conta de trás para frente: quantas abordagens, demos e testes grátis por semana, e mostra no Comercial se a semana está no ritmo.${m.sugestao ? ` Pelo Plano do ano, <b>${m.sugestao} clientes</b> pagam os custos e o seu pró-labore.` : ''}</p>
       <div class="acoes" style="margin-top:0"><button class="bt pri" data-fn="meta">Definir a meta</button></div></div>`;
@@ -1284,7 +1284,7 @@ async function renderComercial(j) {
       <li><button class="bt ${d.tem_consultas && !d.tem_resultado ? 'pri' : ''}" data-acao="sdr_buscar" ${d.tem_consultas && d.tem_buscador ? '' : 'disabled'}>Buscar no Google Maps</button>
         ${d.tem_buscador ? '<small class="neutro">leva de 5 a 30 minutos; acompanhe na janela que abre</small>' : '<small class="ruim">buscador não instalado: no menu Iniciar do Windows, Ciello OS &gt; Reinstalar dependências</small>'}</li>
       <li><button class="bt ${d.tem_resultado ? 'pri' : ''}" data-acao="sdr_qualificar" ${d.tem_resultado ? '' : 'disabled'}>Qualificar o resultado</button> <small class="neutro">junta as empresas novas na sua lista de leads</small></li>
-      <li>Abra a aba <a data-fn="aba" data-aba="hoje" href="#">Hoje</a>: as melhores aparecem com a 1ª mensagem pronta.</li></ol></div>
+      <li>Abra a aba <button type="button" class="bt-texto" data-fn="aba" data-aba="hoje">Hoje</button>: as melhores aparecem com a 1ª mensagem pronta.</li></ol></div>
     <h2>Ou importe uma planilha</h2><p class="sub">De outra ferramenta, de um evento ou de uma lista que você já tem.</p><div class="acoes" style="margin-top:0"><button class="bt" data-fn="planilha">Importar planilha de leads</button></div>`;
   } else if (!d.funil) {
     corpo = `<div class="passos"><h2>Sem leads ainda</h2><ol><li><button class="bt pri" data-fn="aba" data-aba="buscar">Buscar empresas no Google Maps</button></li>
@@ -1302,8 +1302,8 @@ async function renderComercial(j) {
         <span class="chips-k">${chipOferta(l)}${l.agenda ? `<span class="chip trabalhando">Demo ${ddmm(l.agenda)} ${esc(l.agenda.slice(11, 16))}</span>` : hoje ? `<span class="chip esperando">${quente ? 'Responder hoje' : 'Follow-up hoje'}</span>` : ''}</span>
         <div class="acoes-k">${l.telefone ? `<a class="bt mini wa" href="${esc(zap(l.telefone))}" target="_blank" rel="noopener" title="${esc(l.telefone)}">WhatsApp</a>` : ''}${quente ? `<button class="bt mini tom" data-fn="agendar" data-id="${l.id}">${l.agenda ? 'Remarcar' : 'Agendar demo'}</button>` : ''}${etapaSel(l)}</div></article>`; };
     const quadro = `<div class="kanban">${COLS_LEAD.map(([k, r, ets]) => { const l = d.leads.filter((x) => ets.includes(x.etapa)).sort((a, b) => (+b.pontos || 0) - (+a.pontos || 0)); const mostra = l.slice(0, 6);
-      return `<section class="coluna" aria-label="${r}"><div class="coluna-cab"><b>${r}</b><span class="contador">${l.length}</span></div>${mostra.map(cartaoLead).join('') || '<div class="vazio-coluna">Ninguém nesta etapa.</div>'}${l.length > mostra.length ? `<a href="#" class="mais-k" data-fn="aba" data-aba="leads">+${l.length - mostra.length} em Leads</a>` : ''}</section>`; }).join('')}</div>`;
-    corpo = `${funil}${d.ritmo && d.ritmo.tem_meta ? ritmoFaixa(d.ritmo, true) : `<p class="sub" style="margin-top:12px">Sem meta de clientes ainda: <a href="#" data-fn="definirMeta">defina a meta</a> e o OS mostra aqui o ritmo da semana.</p>`}${quadro}
+      return `<section class="coluna" aria-label="${r}"><div class="coluna-cab"><b>${r}</b><span class="contador">${l.length}</span></div>${mostra.map(cartaoLead).join('') || '<div class="vazio-coluna">Ninguém nesta etapa.</div>'}${l.length > mostra.length ? `<button type="button" class="bt-texto mais-k" data-fn="aba" data-aba="leads">+${l.length - mostra.length} em Leads</button>` : ''}</section>`; }).join('')}</div>`;
+    corpo = `${funil}${d.ritmo && d.ritmo.tem_meta ? ritmoFaixa(d.ritmo, true) : `<p class="sub" style="margin-top:12px">Sem meta de clientes ainda: <button type="button" class="bt-texto" data-fn="definirMeta">defina a meta</button> e o OS mostra aqui o ritmo da semana.</p>`}${quadro}
     ${d.agenda.proximas.length ? `<h2>Agenda de demos (${d.agenda.proximas.length})</h2>${d.agenda.proximas.map((a, i) => msgSimples(a, i, 'agenda_proximas',
       `${esc(a.empresa)} <span class="chip ${a.dias === 0 ? 'erro' : 'esperando'}">${a.dias === 0 ? 'hoje' : a.dias === 1 ? 'amanhã' : ddmm(a.quando)} às ${esc(a.quando.slice(11, 16))}</span> <small class="neutro">${a.dias === 0 ? 'lembrete' : 'confirmação'}</small>`,
       `<a class="bt" href="${esc(a.agenda_google)}" target="_blank" rel="noopener">Google Agenda</a><button class="bt" data-fn="agendar" data-id="${a.id}">Remarcar</button>`)).join('')}` : ''}
@@ -1417,7 +1417,7 @@ async function renderConteudo(j) {
   const producao = `${kpisProd}${banner}${d.quadro.length ? `<div class="kanban">${COLUNAS.map(([k, r, vazio]) => { const l = porColuna[k]; const mostra = k === 'noar' ? l.slice(0, 6) : l;
     return `<section class="coluna" aria-label="${esc(r)}"><div class="coluna-cab"><b>${esc(r)}</b><span class="contador">${l.length}</span></div>${mostra.map(cartaoPost).join('') || `<div class="vazio-coluna">${esc(vazio)}</div>`}${l.length > mostra.length ? `<small class="neutro mais-k">+${l.length - mostra.length} mais antigos</small>` : ''}</section>`; }).join('')}</div>`
     : '<div class="vazio" style="margin-top:16px">Nenhum post na agenda. Cada roteiro vira um cartão aqui e anda pelas colunas até ir ao ar.<div class="acoes" style="justify-content:center"><button class="bt pri" data-abrir="objetivos">Semana de conteúdo</button><button class="bt" data-abrir="video">Novo roteiro no Estúdio</button></div></div>'}`;
-  const rodapeProducao = `<p class="sub rodape-k">Próximos horários livres (seg, qua e sex às 10h): ${d.horarios.map((h) => ddmm(h)).join(', ')}. Para criar posts novos: <a data-abrir="objetivos" style="cursor:pointer;color:var(--app)">Objetivos → Semana de conteúdo</a>.</p>`;
+  const rodapeProducao = `<p class="sub rodape-k">Próximos horários livres (seg, qua e sex às 10h): ${d.horarios.map((h) => ddmm(h)).join(', ')}. Para criar posts novos: <button type="button" class="bt-texto" data-abrir="objetivos">Objetivos → Semana de conteúdo</button>.</p>`;
   const analise = `<div class="acoes" style="margin-top:12px"><button class="bt pri" data-acao="relatorio">${icone('play')} Gerar o relatório da semana</button><button class="bt" data-fn="retrato">Anotar números novos</button>
     <button class="bt" data-fn="analisar" title="Abre o Claude com o analista">Discutir com o Analista</button></div>
     ${d.relatorio ? `<p class="sub">${esc(d.relatorio.arquivo)} · o que mudar está no fim.</p><div class="cartao md">${md(d.relatorio.texto)}</div>` : '<div class="vazio">Sem relatório ainda. Anote os números do Instagram e clique em <b>Gerar o relatório da semana</b>.</div>'}`;
@@ -1456,39 +1456,60 @@ async function renderConexoes(j) {
     exportar: () => rapido('social_exportar', {}, 'Histórico exportado'),
   };
   j.fns.mudarRede = ({ rede, campo }, el) => { operar('conexao_rede', campo === 'ativa' ? { rede, ativa: el.value === 'sim' } : { rede, via: el.value }).then((r) => { if (!r.ok) aviso({ titulo: 'Não deu', texto: r.saida, cor: '#C8442F' }); }); };
+  // piloto ligado/desligado num controle segmentado: mesmo pedido que o antigo <select>, só muda a marcação
+  j.fns.redeAtiva = ({ rede, v }, el) => { el.parentElement.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === el)));
+    operar('conexao_rede', { rede, ativa: v === 'sim' }).then((r) => { if (!r.ok) aviso({ titulo: 'Não deu', texto: r.saida, cor: '#C8442F' }); }); };
   const situacao = (p) => { const e = p.estado || {};
     if (!e.conectado && !(p.id === 'claude')) return '<span class="chip parado">não conectado</span>';
     if (e.ok === false) return `<span class="chip erro" title="${esc(e.mensagem || '')}">caiu${e.caiu_em ? ` em ${quandoBr(e.caiu_em)}` : ''}</span>`;
-    if (e.ok) return `<span class="chip trabalhando">conectado</span>`;
+    if (e.ok) return `<span class="chip pronto">conectado</span>`;
     return '<span class="chip">não checado</span>'; };
+  const alerta = (cor, html, extra = '') => `<div class="alerta-tonal ${cor}" role="status">${icone('aviso')}<div class="cresce">${html}</div>${extra}</div>`;
   const M = d.metricool || {};
   const redesMc = [...new Set([...(M.conectadas || []), ...(M.faltam || [])])];
-  const metricool = `<div class="cartao metricool-conf ${M.ok === false ? 'alerta' : ''}"><div class="cab-conexao"><b>Metricool visto pelos agentes</b>${M.ok === true ? `<span class="chip ${M.velha ? '' : 'trabalhando'}">${M.velha ? 'conferir de novo' : 'tudo certo'}</span>` : M.ok === false ? '<span class="chip erro">falta conectar</span>' : '<span class="chip">não conferido</span>'}
-      ${M.marca ? `<small class="neutro">marca ${esc(M.marca.nome)}</small>` : ''}</div>
-    <p class="sub" style="margin:4px 0">Antes de agendar, puxar números ou estudar concorrentes, os agentes conferem se as redes que o OS usa estão conectadas na marca do Metricool. Se faltar alguma, eles param e avisam.</p>
-    ${M.ok === false ? `<div class="linha-item achado alto"><small style="white-space:normal"><b>${esc(M.mensagem || '')}.</b> Entre em <a href="https://app.metricool.com/" target="_blank" rel="noopener">app.metricool.com</a> → Conexões, reconecte e clique em Conferir agora. Até lá o piloto segura os posts dessa rede.</small></div>` : ''}
-    ${redesMc.length ? `<div class="acoes-linha">${redesMc.map((r) => `<span class="chip ${(M.faltam || []).includes(r) ? 'erro' : 'pronto'}">${(M.faltam || []).includes(r) ? '✕' : '✓'} ${esc((M.nomes || {})[r] || r)}${M.contas && M.contas[r] ? ` · ${esc(M.contas[r])}` : ''}</span>`).join('')}</div>` : ''}
-    <div class="acoes-linha" style="margin-top:8px"><button class="bt mini pri" data-acao="metricool_conferir">Conferir agora</button><small class="neutro">${M.quando ? `conferido em ${quandoBr(M.quando)}` : 'ainda não conferido'}</small></div></div>`;
+  const chipMc = M.ok === true ? `<span class="chip ${M.velha ? 'esperando' : 'pronto'}">${M.velha ? 'conferir de novo' : 'tudo certo'}</span>` : M.ok === false ? '<span class="chip erro">falta conectar</span>' : '<span class="chip parado">não conferido</span>';
+  const metricool = `<section class="cartao cartao-conexao metricool-conf"><header class="cab-cartao"><span class="ic-tile">${icone('radar')}</span>
+      <div class="cresce"><b>Metricool visto pelos agentes</b><small>${M.marca ? `marca ${esc(M.marca.nome)}` : 'as redes que o OS usa, na marca do Metricool'}</small></div>${chipMc}</header>
+    <p class="sub">Antes de agendar, puxar números ou estudar concorrentes, os agentes conferem se as redes que o OS usa estão conectadas na marca do Metricool. Se faltar alguma, eles param e avisam.</p>
+    ${M.ok === false ? alerta('erro', `<b>${esc(M.mensagem || '')}.</b> Reconecte no Metricool (Conexões) e clique em Conferir agora. Até lá o piloto segura os posts dessa rede.`, '<a class="bt mini fantasma" href="https://app.metricool.com/" target="_blank" rel="noopener">Abrir o Metricool</a>') : ''}
+    ${redesMc.length ? `<div class="chips-linha">${redesMc.map((r) => `<span class="chip ${(M.faltam || []).includes(r) ? 'erro' : 'pronto'}">${(M.faltam || []).includes(r) ? '✕' : '✓'} ${esc((M.nomes || {})[r] || r)}${M.contas && M.contas[r] ? ` · ${esc(M.contas[r])}` : ''}</span>`).join('')}</div>` : ''}
+    <footer class="acoes-cartao"><button class="bt pri" data-acao="metricool_conferir">Conferir agora</button><small class="neutro">${M.quando ? `conferido em ${quandoBr(M.quando)}` : 'ainda não conferido'}</small></footer></section>`;
   const redes = Object.entries(d.redes).map(([rede, r]) => {
-    const opcoes = d.provedores.filter((p) => p.publica.includes(rede));
-    return `<tr><td><b>${esc(d.nomes_redes[rede])}</b></td><td><select data-mudar="mudarRede" data-rede="${rede}" data-campo="ativa"><option value="sim" ${r.ativa ? 'selected' : ''}>ligada</option><option value="nao" ${r.ativa ? '' : 'selected'}>desligada</option></select></td>
-      <td><select data-mudar="mudarRede" data-rede="${rede}" data-campo="via"><option value="">— escolha —</option>${opcoes.map((p) => `<option value="${p.id}" ${r.via === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></td>
-      <td>${!r.via ? '<small class="neutro">sem provedor: não publica</small>' : r.ativa && ['claude', 'metricool'].includes(r.via) && (M.faltam || []).includes(rede) && M.ok === false ? '<span class="chip erro">desconectado no Metricool</span>' : situacao(porId[r.via])}</td></tr>`; }).join('');
+    const opcoes = d.provedores.filter((p) => p.publica.includes(rede)); const nomeR = d.nomes_redes[rede];
+    return `<tr><td><span class="rede-tab"><span class="avatar-ini">${esc(iniciais(nomeR))}</span><b>${esc(nomeR)}</b></span></td>
+      <td><div class="seg-mini" role="group" aria-label="Piloto · ${esc(nomeR)}"><button type="button" data-fn="redeAtiva" data-rede="${rede}" data-v="sim" aria-pressed="${r.ativa}">Ligada</button><button type="button" data-fn="redeAtiva" data-rede="${rede}" data-v="nao" aria-pressed="${!r.ativa}">Desligada</button></div></td>
+      <td><select class="sel-tonal" aria-label="Publica por · ${esc(nomeR)}" data-mudar="mudarRede" data-rede="${rede}" data-campo="via"><option value="">Escolha o provedor</option>${opcoes.map((p) => `<option value="${p.id}" ${r.via === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></td>
+      <td>${!r.via ? '<span class="chip parado">sem provedor: não publica</span>' : r.ativa && ['claude', 'metricool'].includes(r.via) && (M.faltam || []).includes(rede) && M.ok === false ? '<span class="chip erro">desconectado no Metricool</span>' : situacao(porId[r.via])}</td></tr>`; }).join('');
   const cartao = (p) => { const e = p.estado || {}; const h = p.historico || {};
-    return `<div class="cartao conexao"><div class="cab-conexao"><b>${esc(p.nome)}</b>${situacao(p)}${e.conta ? `<small class="neutro">${esc(e.conta)}</small>` : ''}</div>
-      <p class="sub" style="margin:4px 0">${esc(p.ajuda)}${p.limite ? ` <span class="neutro">· ${esc(p.limite)}</span>` : ''}</p>
-      ${e.ok === false ? `<div class="linha-item achado alto"><small style="white-space:normal">${esc(e.mensagem || '')}</small></div>` : ''}
-      <small class="neutro">Redes: ${p.redes.map((r) => d.nomes_redes[r]).join(', ')}${e.ultima_checagem ? ` · checado em ${quandoBr(e.ultima_checagem)}` : ''}
-        · guardado no PC: ${h.publicacoes || 0} publicações, ${h.comentarios || 0} comentários${h.desde ? ` desde ${ddmm(h.desde)}` : ''}${h.ultima_sync ? ` · última sincronização ${quandoBr(h.ultima_sync)}` : ''}</small>
-      <div class="acoes-linha" style="margin-top:8px">${p.campos.length ? `<button class="bt mini ${e.conectado ? '' : 'pri'}" data-fn="conectar" data-id="${p.id}">${e.conectado ? 'Editar' : 'Conectar'}</button>` : ''}
-        ${p.oauth ? `<button class="bt mini ${p.logado ? '' : 'pri'}" data-fn="entrar" data-id="${p.id}">${p.logado ? 'Entrar de novo' : `Entrar com ${p.id === 'youtube' ? 'o Google' : 'o TikTok'}`}</button>` : ''}
-        <button class="bt mini" data-fn="checar" data-id="${p.id}">Checar agora</button>${e.conectado && p.campos.length ? `<button class="bt mini" data-fn="desconectar" data-id="${p.id}">Desconectar</button>` : ''}</div></div>`; };
+    const bts = [];
+    if (p.campos.length) bts.push(['conectar', e.conectado ? 'Editar' : 'Conectar', !e.conectado]);
+    if (p.oauth) bts.push(['entrar', p.logado ? 'Entrar de novo' : `Entrar com ${p.id === 'youtube' ? 'o Google' : 'o TikTok'}`, !p.logado]);
+    const iPri = bts.findIndex((b) => b[2]); // um botão cheio por cartão; os outros com tom
+    return `<article class="cartao cartao-conexao"><header class="cab-cartao"><span class="ic-tile">${esc(iniciais(p.nome))}</span>
+        <div class="cresce"><b>${esc(p.nome)}</b><small>${e.conta ? esc(e.conta) : e.ultima_checagem ? `checado em ${quandoBr(e.ultima_checagem)}` : 'ainda não checado'}</small></div>${situacao(p)}</header>
+      <p class="sub">${esc(p.ajuda)}</p>${p.limite ? `<p class="limite-conexao">${esc(p.limite)}</p>` : ''}
+      ${e.ok === false ? alerta('erro', esc(e.mensagem || '')) : ''}
+      <div class="chips-linha">${p.redes.map((r) => `<span class="chip">${esc(d.nomes_redes[r])}</span>`).join('')}</div>
+      <small class="neutro">Guardado no PC: ${h.publicacoes || 0} publicações e ${h.comentarios || 0} comentários${h.desde ? ` desde ${ddmm(h.desde)}` : ''}${h.ultima_sync ? ` · sincronizado em ${quandoBr(h.ultima_sync)}` : ''}</small>
+      <footer class="acoes-cartao">${bts.map(([fn, rot], i) => `<button class="bt mini ${i === iPri ? 'pri' : 'tom'}" data-fn="${fn}" data-id="${p.id}">${rot}</button>`).join('')}
+        <button class="bt mini fantasma" data-fn="checar" data-id="${p.id}">Checar agora</button>${e.conectado && p.campos.length ? `<button class="bt mini fantasma" data-fn="desconectar" data-id="${p.id}">Desconectar</button>` : ''}</footer></article>`; };
+  // resumo primeiro: o que publica, o que está conectado e o que já está guardado no PC
+  const ativas = Object.values(d.redes).filter((r) => r.ativa && r.via).length; const nRedes = Object.keys(d.redes).length;
+  const conectados = d.provedores.filter((p) => (p.estado || {}).conectado).length;
+  const guardado = d.provedores.reduce((t, p) => t + ((p.historico || {}).publicacoes || 0), 0);
+  const comentarios = d.provedores.reduce((t, p) => t + ((p.historico || {}).comentarios || 0), 0);
+  const caidos = d.provedores.filter((p) => (p.estado || {}).ok === false).length;
+  const kpi = (r, v, e, tom = '') => `<div class="kpi ${tom}"><small>${r}</small><strong>${v}</strong><em>${e}</em></div>`;
+  const kpis = `<div class="kpis kpis-conexao">${kpi('Redes publicando', ativas, `de ${nRedes} redes`, ativas ? 'verde' : 'amarelo')}${kpi('Provedores conectados', conectados, `de ${d.provedores.length}`, caidos ? 'vermelho' : '')}
+    ${kpi('Metricool', M.ok === true ? 'Tudo certo' : M.ok === false ? 'Falta conectar' : 'Não conferido', M.quando ? `conferido em ${quandoBr(M.quando)}` : 'os agentes conferem antes de agendar', M.ok === true ? 'verde' : M.ok === false ? 'vermelho' : '')}
+    ${kpi('Guardado no PC', num(guardado), `publicações · ${num(comentarios)} comentários`)}</div>`;
   j.corpo.innerHTML = `<div class="pagina"><h1>Conexões</h1><p class="sub">Metricool, Instagram, YouTube e TikTok. Tudo o que vem deles é copiado para o seu PC: se um provedor cair ou for desconectado, você não perde histórico nem trabalho, e os posts esperam na fila até a conexão voltar.</p>
-  ${d.cofre_protegido ? '' : '<div class="faixa">Neste sistema as senhas ficam só codificadas (sem a proteção do Windows). No seu PC com Windows elas são cifradas.</div>'}
+  <div class="acoes topo"><button class="bt pri" data-acao="sincronizar">Sincronizar agora</button><button class="bt" data-fn="exportar" title="Tudo em CSV, em estado/exportacao">Exportar histórico (CSV)</button></div>
+  ${kpis}
+  ${d.cofre_protegido ? '' : faixaAvisos(['Neste sistema as senhas ficam só codificadas (sem a proteção do Windows). No seu PC com Windows elas são cifradas.'], '')}
   ${metricool}
-  <h2>Por onde cada rede publica</h2><table class="tab"><tr><th>Rede</th><th>Piloto</th><th>Publica por</th><th>Situação</th></tr>${redes}</table>
-  <h2>Provedores</h2><div class="grade2">${d.provedores.map(cartao).join('')}</div>
-  <div class="acoes"><button class="bt pri" data-acao="sincronizar">Sincronizar agora</button><button class="bt" data-fn="exportar" title="Tudo em CSV, em estado/exportacao">Exportar histórico (CSV)</button></div></div>`;
+  <h2>Por onde cada rede publica</h2><table class="tab tab-redes"><tr><th>Rede</th><th>Piloto</th><th>Publica por</th><th>Situação</th></tr>${redes}</table>
+  <h2>Provedores</h2><div class="grade-conexoes">${d.provedores.map(cartao).join('')}</div></div>`;
 }
 
 // ------------------------------------------------------------------ apps: rede social (piloto, calendário, comentários, resultados)
@@ -1910,7 +1931,7 @@ async function renderAtendimento(j) {
   const lado = `<aside class="painel"><div class="cab-faq"><div class="anel" style="--p:${pct}%" role="img" aria-label="${completas} de ${d.faq.length} respostas completas"><span>${completas}/${d.faq.length}</span></div>
       <div><b>${!d.faq.length ? 'FAQ vazio' : faltam.length ? (pct >= 60 ? 'FAQ quase completo' : 'Complete o FAQ') : 'FAQ completo'}</b><small>${faltam.length ? `Faltam ${faltam.length} resposta${faltam.length > 1 ? 's' : ''} que todo cliente pede` : 'Todas as perguntas têm resposta'}</small></div></div>
     ${faltam.length ? `<div class="lista-faltam">${faltam.map((x) => `<div><span>${esc(x.pergunta)}<small>${esc(x.resposta || '(vazia)')}</small></span><button class="bt mini tom" data-fn="completar" data-i="${x.i}">Responder</button></div>`).join('')}</div>` : ''}
-    <div class="acoes-linha"><a href="#" data-fn="aba" data-aba="faq">Ver o FAQ inteiro</a><span style="flex:1"></span><button class="bt mini fantasma" data-fn="nova">+ Pergunta nova</button></div></aside>`;
+    <div class="acoes-linha"><button type="button" class="bt-texto" data-fn="aba" data-aba="faq">Ver o FAQ inteiro</button><span style="flex:1"></span><button class="bt mini fantasma" data-fn="nova">+ Pergunta nova</button></div></aside>`;
   const chipsPara = d.clientes.slice(0, 3).map((c) => `<button class="chip-filtro ${j.para === c.id ? 'on' : ''}" data-fn="para" data-id="${esc(c.id)}" aria-pressed="${j.para === c.id}" title="${esc(c.empresa)}${c.contato ? ` · ${esc(c.contato)}` : ''}">${esc(c.empresa.replace(/\s*\(exemplo\)/, ''))}</button>`).join('');
   const respostas = !j.achados ? '' : `${j.achados.length ? j.achados.map((a, i) => `<section class="painel resposta-faq"><div class="cab"><b>${i ? 'Outra resposta' : 'Resposta pronta'} · ${esc(a.pergunta)}</b><span class="chip">Do FAQ: ${esc(a.secao)}</span>${a.completa ? '' : '<span class="chip esperando">resposta incompleta</span>'}</div>
       <div class="bolha-wa"><textarea class="texto-msg" data-resp="${i}" rows="3" aria-label="Resposta para o cliente">${esc(a.resposta)}</textarea></div>
@@ -2251,7 +2272,6 @@ const SECOES_BIB = [['posts', 'Posts'], ['videos', 'Vídeos'], ['capas', 'Capas'
 const ROT_PESQUISA = { concorrentes: 'Os concorrentes que a vigia acompanha e o pesquisador estuda.', nichos: 'Os temas do conteúdo e os nichos de cliente que a busca de leads usa.',
   referencias: 'Vídeos que viralizaram e servem de modelo de gancho, e onde o radar procura novidades.' };
 const visCurto = (v) => { const n = +v || 0; return n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} mi` : n >= 1e3 ? `${Math.round(n / 1e3)} mil` : n ? String(n) : ''; };
-const linkExt = (url, rot) => `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(rot)}</a>`;
 // abas Concorrentes, Nichos e Referências (central/pesquisa.py): o que orienta a pesquisa, com cadastro
 function pesquisaBib(j, P) {
   const formConc = (c = {}) => dialogo(j, { titulo: c.nome ? `Editar ${c.nome}` : 'Novo concorrente', botao: 'Salvar',
@@ -2274,29 +2294,33 @@ function pesquisaBib(j, P) {
     novoConcorrente: () => formConc(), editarConcorrente: ({ i }) => formConc(P.concorrentes[+i]),
     novoNicho: () => formNicho(), editarNicho: ({ i }) => formNicho(P.nichos[+i]), novaReferencia: () => formRef(),
   });
+  const linkChip = (url, rot) => `<a class="chip-link" href="${esc(url)}" target="_blank" rel="noopener" title="${esc(url)}">${esc(rot)}<span aria-hidden="true">↗</span></a>`;
+  const linkBt = (url, rot) => `<a class="bt mini tom" href="${esc(url)}" target="_blank" rel="noopener">${esc(rot)}</a>`;
   if (j.aba === 'concorrentes') {
     const add = '<button class="bt pri" data-fn="novoConcorrente">+ Concorrente</button>';
     return `<div class="acoes-linha cab-pesquisa">${add}<button class="bt" data-acao="vigia">Rodar a vigia agora</button></div>` + (P.concorrentes.length ? `<div class="grade-pesquisa">${P.concorrentes.map((c, i) => `<article class="cartao-pesquisa">
-      <header><span class="avatar-bib">${esc((c.nome || '?').slice(0, 1).toUpperCase())}</span><div><b>${esc(c.nome)}</b>${c.instagram ? `<small>${linkExt(`https://www.instagram.com/${c.instagram}/`, `@${c.instagram}`)}</small>` : '<small class="neutro">sem Instagram</small>'}</div>
-        <button class="bt mini" data-fn="editarConcorrente" data-i="${i}">Editar</button></header>
-      <ul class="links-bib">${c.urls.map((u) => `<li>${linkExt(u.url, u.rotulo)}${u.conferir ? ' <span class="chip esperando">conferir</span>' : ''}</li>`).join('') || '<li class="neutro">Nenhuma página para vigiar.</li>'}</ul>
-      ${c.anuncios ? `<footer>${linkExt(`https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q=${encodeURIComponent(c.anuncios)}`, 'Ver anúncios na Meta')}</footer>` : ''}</article>`).join('')}</div>`
-      : '<div class="vazio">Nenhum concorrente ainda. Cadastre quem disputa o mesmo cliente que você.</div>');
+      <header class="cab-cartao"><span class="ic-tile">${esc(iniciais(c.nome))}</span><div class="cresce"><b>${esc(c.nome)}</b><small>${c.instagram ? `@${esc(c.instagram)}` : 'sem Instagram'}${c.anuncios ? ' · anúncios na Meta' : ''}</small></div>
+        <button class="bt mini fantasma" data-fn="editarConcorrente" data-i="${i}">Editar</button></header>
+      <div class="bloco-pesquisa"><small>Páginas vigiadas</small>${c.urls.length ? `<div class="chips-linha">${c.urls.map((u) => `${linkChip(u.url, u.rotulo)}${u.conferir ? '<span class="chip esperando" title="A vigia viu mudança: confira">conferir</span>' : ''}`).join('')}</div>` : '<p class="neutro">Nenhuma página para vigiar ainda. Clique em Editar para incluir.</p>'}</div>
+      ${c.instagram || c.anuncios ? `<footer class="acoes-cartao">${c.instagram ? linkBt(`https://www.instagram.com/${c.instagram}/`, 'Ver no Instagram') : ''}${c.anuncios ? linkBt(`https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=BR&q=${encodeURIComponent(c.anuncios)}`, 'Ver anúncios na Meta') : ''}</footer>` : ''}</article>`).join('')}</div>`
+      : `<div class="vazio">Nenhum concorrente ainda. Cadastre quem disputa o mesmo cliente que você.<div class="acoes" style="justify-content:center">${add}</div></div>`);
   }
   if (j.aba === 'nichos') {
-    const pontos = (n) => `<span class="prioridade-bib" title="Prioridade ${n} de 5">${[1, 2, 3, 4, 5].map((k) => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</span>`;
-    return `<h2>Pilares do conteúdo</h2><p class="sub">Os temas que o radar procura e o roteirista usa.</p><div class="grade-pilares">${P.pilares.map((p) => `<div class="pilar-bib"><b>${esc(p.nome)}</b><small>${p.referencias} ${p.referencias === 1 ? 'referência' : 'referências'}</small></div>`).join('')}</div>
+    const medidor = (n) => `<div class="medidor-nicho"><span class="medidor" role="meter" aria-valuemin="1" aria-valuemax="5" aria-valuenow="${n}" aria-label="Prioridade ${n} de 5"><i style="width:${n * 20}%"></i></span><small>Prioridade ${n} de 5</small></div>`;
+    return `<h2>Pilares do conteúdo</h2><p class="sub">Os temas que o radar procura e o roteirista usa.</p><div class="grade-pilares">${P.pilares.map((p) => `<div class="pilar-bib"><strong>${p.referencias}</strong><b>${esc(p.nome)}</b><small>${p.referencias === 1 ? 'referência' : 'referências'}</small></div>`).join('')}</div>
       <div class="cab-bib cab-nichos"><div><h2>Nichos de cliente</h2><p class="sub">Para quem a empresa vende. A busca de leads procura estes termos${P.cidades.length ? ` em ${esc(P.cidades.join(', '))}` : ''}.</p></div><button class="bt pri" data-fn="novoNicho">+ Nicho</button></div>
-      ${P.nichos.length ? `<div class="grade-pesquisa">${P.nichos.map((n, i) => `<article class="cartao-pesquisa"><header><div><b>${esc(n.nome)}</b>${pontos(n.prioridade)}</div><button class="bt mini" data-fn="editarNicho" data-i="${i}">Editar</button></header>
-        ${n.dor ? `<p><small class="neutro">Dor</small>${esc(n.dor)}</p>` : ''}${n.valor ? `<p><small class="neutro">Ganho</small>${esc(n.valor)}</p>` : ''}
-        <footer>${n.termos.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</footer></article>`).join('')}</div>` : '<div class="vazio">Nenhum nicho ainda.</div>'}`;
+      ${P.nichos.length ? `<div class="grade-pesquisa">${P.nichos.map((n, i) => `<article class="cartao-pesquisa"><header class="cab-cartao"><span class="ic-tile">${esc(iniciais(n.nome))}</span><div class="cresce"><b>${esc(n.nome)}</b>${medidor(n.prioridade)}</div>
+          <button class="bt mini fantasma" data-fn="editarNicho" data-i="${i}">Editar</button></header>
+        ${n.dor || n.valor ? `<div class="dor-ganho">${n.dor ? `<div class="dor"><small>Dor</small><p>${esc(n.dor)}</p></div>` : ''}${n.valor ? `<div class="ganho"><small>Ganho</small><p>${esc(n.valor)}</p></div>` : ''}</div>` : ''}
+        <footer class="bloco-pesquisa"><small>Busca no Google Maps</small><div class="chips-linha">${n.termos.map((t) => `<span class="chip">${esc(t)}</span>`).join('') || '<span class="neutro">sem termos</span>'}</div></footer></article>`).join('')}</div>` : '<div class="vazio">Nenhum nicho ainda. Cadastre para quem a empresa vende e a busca de leads passa a usar.</div>'}`;
   }
-  const refs = P.referencias.length ? `<div class="lista-refs">${P.referencias.map((r) => `<article class="ref-bib"><div class="views-bib"><b>${visCurto(r.views) || '—'}</b><small>views</small></div>
+  const maxViews = Math.max(1, ...P.referencias.map((r) => +r.views || 0));
+  const refs = P.referencias.length ? `<div class="lista-refs">${P.referencias.map((r) => `<article class="ref-bib"><div class="views-bib ${(+r.views || 0) >= maxViews * 0.5 ? 'alta' : ''}"><b>${visCurto(r.views) || '—'}</b><small>views</small></div>
       <div class="cresce"><b>${esc(r.gancho)}</b><small>${esc(r.perfil || '')}${r.nosso ? ' · nosso' : ''}${r.data ? ` · ${ddmm(r.data)}` : ''}</small>
-      <div class="chips-ref"><span class="chip trabalhando" title="${esc(r.formato_rotulo)}">${esc(r.formato || 'outro')}</span>${r.pilar ? `<span class="chip">${esc((P.pilares.find((p) => p.id === r.pilar) || { nome: r.pilar }).nome)}</span>` : ''}</div>
-      ${r.porque ? `<p>${esc(r.porque)}</p>` : ''}</div>${r.url ? linkExt(r.url, 'Abrir') : ''}</article>`).join('')}</div>` : '<div class="vazio">Nenhuma referência ainda. Guarde um vídeo que viralizou para virar modelo de gancho.</div>';
+      <div class="chips-ref"><span class="chip trabalhando" title="${esc(r.formato_rotulo)}">${esc(r.formato || 'outro')}</span>${r.pilar ? `<span class="chip app">${esc((P.pilares.find((p) => p.id === r.pilar) || { nome: r.pilar }).nome)}</span>` : ''}${r.nosso ? '<span class="chip pronto">nosso</span>' : ''}</div>
+      ${r.porque ? `<p><span>Por que funcionou</span>${esc(r.porque)}</p>` : ''}</div>${r.url ? linkBt(r.url, 'Abrir o vídeo') : ''}</article>`).join('')}</div>` : '<div class="vazio">Nenhuma referência ainda. Guarde um vídeo que viralizou para virar modelo de gancho.</div>';
   return `<div class="cab-bib"><h2>Vídeos de referência</h2><button class="bt pri" data-fn="novaReferencia">+ Referência</button></div>${refs}
-    <h2>Onde o radar procura</h2><div class="grade-pesquisa">${Object.entries(P.buscas).map(([fonte, l]) => `<article class="cartao-pesquisa"><header><b>${esc(fonte)}</b></header><footer>${l.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</footer></article>`).join('')}</div>`;
+    <h2>Onde o radar procura</h2><div class="grade-pesquisa">${Object.entries(P.buscas).map(([fonte, l]) => `<article class="cartao-pesquisa"><header class="cab-cartao"><span class="ic-tile">${icone('radar')}</span><div class="cresce"><b>${esc(fonte)}</b><small>${l.length} ${l.length === 1 ? 'busca' : 'buscas'}</small></div></header><div class="chips-linha">${l.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</div></article>`).join('')}</div>`;
 }
 const ROT_ETAPA_BIB = { roteiro: 'Roteiro', narracao: 'Narração', video: 'Vídeo', final: 'Final', capa: 'Capa', legenda: 'Legenda', agendado: 'Agendado' };
 const ETAPAS_BIB = Object.keys(ROT_ETAPA_BIB);
