@@ -28,7 +28,7 @@ npm install --legacy-peer-deps
 npx vite build
 ```
 
-Abra o `Ciello.cmd` e confira. Os testes do núcleo ficam em `central/testes/test_escritorio_nucleo.py` e
+Abra o Ciello OS e confira. Os testes do núcleo ficam em `central/testes/test_escritorio_nucleo.py` e
 `central/testes/test_servidor.py`.
 
 ## Créditos

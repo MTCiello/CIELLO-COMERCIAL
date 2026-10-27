@@ -284,7 +284,7 @@ def comando_hyperframes() -> list[str]:
         return [str(local)]
     npx = shutil.which("npx") or shutil.which("npx.cmd")
     if not npx:
-        raise SystemExit("Falta o Node.js (npx). Rode o instalar.cmd.")
+        raise SystemExit("Falta o Node.js (npx). No menu Iniciar do Windows: Ciello OS > Reinstalar dependências.")
     return [npx, "--yes", f"hyperframes@{VERSAO_HF}"]
 
 

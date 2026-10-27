@@ -1,7 +1,10 @@
 """python -m unittest discover central/testes  (gerenciador de atualizações: instalador/atualizacao.py)"""
 import io
+import importlib.machinery
+import importlib.util
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -128,6 +131,38 @@ class TesteConsulta(unittest.TestCase):
         self.assertFalse(atualizacao.hora_de_verificar(atualizacao.PADRAO, self.raiz, agora=base + 3600))
         self.assertTrue(atualizacao.hora_de_verificar(atualizacao.PADRAO, self.raiz, agora=base + 13 * 3600))
         self.assertFalse(atualizacao.hora_de_verificar({**atualizacao.PADRAO, "verificar_ao_abrir": False}, self.raiz))
+
+
+class SemJanelaDeCmd(unittest.TestCase):
+    """Pedido do Mateus: um instalador só, sem instalar/testar/Ciello/agendar.cmd e sem janela de CMD ou de Python."""
+    RAIZ = Path(__file__).resolve().parents[2]
+
+    def test_sem_cmd_nem_bat_na_raiz(self):
+        self.assertEqual([p.name for p in self.RAIZ.iterdir() if p.suffix.lower() in (".cmd", ".bat")], [])
+
+    def test_instalador_roda_o_preparar_escondido(self):
+        iss = (self.RAIZ / "instalador" / "ciello.iss").read_text(encoding="utf-8")
+        self.assertNotIn("SW_SHOW", iss)
+        self.assertIn("ExecAndLogOutput('powershell.exe', Params, ExpandConstant('{app}'), SW_HIDE", iss)
+        self.assertNotIn('Filename: "powershell.exe"', iss)  # nenhum atalho abre PowerShell
+        ps = (self.RAIZ / "instalador" / "preparar.ps1").read_text(encoding="utf-8-sig")
+        self.assertEqual(sorted({int(n) for n in re.findall(r"^\s*Etapa (\d+) ", ps, flags=re.M)}), list(range(1, 12)))
+
+    def test_icone_liga_o_servidor_sem_janela(self):
+        lancador = (self.RAIZ / "instalador" / "lancador.pyw").read_text(encoding="utf-8")
+        self.assertIn("CREATE_NO_WINDOW", lancador)
+        self.assertNotIn("CREATE_NEW_CONSOLE", lancador)
+
+    def test_rotinas_fora_do_windows_so_avisam(self):
+        spec = importlib.util.spec_from_loader("rotinas", importlib.machinery.SourceFileLoader(
+            "rotinas", str(self.RAIZ / "instalador" / "rotinas.pyw")))
+        rotinas = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(rotinas)
+        self.assertEqual(set(rotinas.ROTINAS), {"bom-dia", "piloto"})
+        for _, _, args in rotinas.ROTINAS.values():
+            self.assertTrue((self.RAIZ / args[0]).exists())
+        with mock.patch.object(rotinas.os, "name", "posix"):
+            self.assertEqual(rotinas.ligar()[0], 1)
 
 
 if __name__ == "__main__":

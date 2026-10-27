@@ -132,16 +132,28 @@ export class OfficeState {
       if (ch.isSubagent || !ch.directoryName || !ch.seatId) continue;
       if (this.seatNaArea(ch.seatId, ch.directoryName)) continue;
       const novo = this.findFreeSeat(ch.directoryName);
-      if (novo && this.seatNaArea(novo, ch.directoryName)) this.reassignSeat(ch.id, novo);
+      // quem estava num lugar da sala do Gerente sem morar lá sai mesmo que a área dele esteja cheia
+      const intruso = !this.podeSentar(ch.seatId, ch.directoryName);
+      if (novo && (intruso || this.seatNaArea(novo, ch.directoryName))) this.reassignSeat(ch.id, novo);
     }
   }
 
-  /** O lugar está numa das áreas atribuídas a esta pasta/agente? (sem área atribuída, qualquer lugar serve) */
+  /** O lugar está numa das áreas atribuídas a esta pasta/agente? (sem área atribuída, qualquer lugar serve, menos as
+   *  salas privativas: a sala do Gerente é só de quem mora nela) */
   private seatNaArea(seatId: string, directoryName?: string): boolean {
+    if (!this.podeSentar(seatId, directoryName)) return false;
     const areas = directoryName ? this.areaMappings[directoryName] : undefined;
     if (!areas || areas.length === 0) return true;
     const zona = this.seatZone(seatId);
     return zona !== null && areas.includes(zona);
+  }
+
+  /** Lugar numa sala privativa (Gerente e os Arquivos dele) só serve para quem mora numa delas. */
+  private podeSentar(seatId: string, directoryName?: string): boolean {
+    const zona = this.seatZone(seatId);
+    if (zona === null || !SALAS_PRIVATIVAS.includes(zona)) return true;
+    const areas = directoryName ? this.areaMappings[directoryName] : undefined;
+    return !!areas?.some((a) => SALAS_PRIVATIVAS.includes(a));
   }
 
   constructor(layout?: OfficeLayout) {
@@ -307,7 +319,7 @@ export class OfficeState {
 
     // First pass: try to keep characters at their existing seats
     for (const ch of this.characters.values()) {
-      if (ch.seatId && this.seats.has(ch.seatId)) {
+      if (ch.seatId && this.seats.has(ch.seatId) && this.podeSentar(ch.seatId, ch.directoryName)) {
         const seat = this.seats.get(ch.seatId)!;
         if (!seat.assigned) {
           seat.assigned = true;
@@ -510,7 +522,7 @@ export class OfficeState {
     const electronicsTiles = this.buildElectronicsTileSet();
     const freeSeats: string[] = [];
     for (const [uid, seat] of this.seats) {
-      if (!seat.assigned) freeSeats.push(uid);
+      if (!seat.assigned && this.podeSentar(uid, directoryName)) freeSeats.push(uid);
     }
     if (freeSeats.length === 0) return null;
 
@@ -608,7 +620,9 @@ export class OfficeState {
       }
     }
     if (!seatId && anchorAt) {
-      seatId = closestFreeSeat(this.seats, anchorAt.col, anchorAt.row);
+      seatId = closestFreeSeat(this.seats, anchorAt.col, anchorAt.row, (uid) =>
+        this.podeSentar(uid, directoryName),
+      );
     }
     if (!seatId) {
       seatId = this.findFreeSeat(directoryName);
@@ -799,7 +813,9 @@ export class OfficeState {
     if (!teammate || !lead) return;
     const anchorAt = anchorTile(lead, this.seats);
     if (!anchorAt) return;
-    const target = closestFreeSeat(this.seats, anchorAt.col, anchorAt.row);
+    const target = closestFreeSeat(this.seats, anchorAt.col, anchorAt.row, (uid) =>
+      this.podeSentar(uid, teammate.directoryName),
+    );
     if (!target || target === teammate.seatId) return;
     const targetSeat = this.seats.get(target)!;
     const targetDist =

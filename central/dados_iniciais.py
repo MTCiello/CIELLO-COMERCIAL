@@ -173,6 +173,13 @@ def importar(conteudo: bytes) -> dict:
     for nome, rel in validos:
         alvo = persistencia.CASA / "layout.json" if rel == LAYOUT else RAIZ / rel
         dado = zf.read(nome)
+        if rel == LAYOUT:  # o seu layout: a troca automática pelo padrão novo não pode passar por cima dele
+            try:
+                lay = json.loads(dado)
+                if isinstance(lay, dict):
+                    dado = json.dumps({**lay, "cielloImportado": True}, ensure_ascii=False, indent=2).encode("utf-8")
+            except ValueError:
+                pass
         if alvo.exists():
             if alvo.read_bytes() == dado:
                 continue

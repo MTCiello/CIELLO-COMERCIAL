@@ -50,6 +50,16 @@ jobs:
           git archive --format=zip HEAD -o build/app.zip
           Expand-Archive build/app.zip build/app -Force
 
+      - name: Nada de .cmd/.bat nem console para o usuário
+        shell: pwsh
+        run: |
+          $soltos = Get-ChildItem build/app -Recurse -Include *.cmd, *.bat -File
+          if ($soltos) { $soltos | ForEach-Object { Write-Error "arquivo de CMD no pacote: $($_.FullName)" }; exit 1 }
+          $atalhos = Select-String -Path instalador/ciello.iss -Pattern '^Name: [^;]+; Filename: "([^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+          $ruins = $atalhos | Where-Object { $_ -notmatch 'pythonw\.exe$' -and $_ -ne '{uninstallexe}' }
+          if ($ruins) { $ruins | ForEach-Object { Write-Error "atalho que abre janela de console: $_" }; exit 1 }
+          Write-Host "Ok: $($atalhos.Count) atalhos, todos sem console; nenhum .cmd/.bat no pacote."
+
       - name: Inno Setup
         shell: pwsh
         run: |
