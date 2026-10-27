@@ -51,6 +51,9 @@ class Fachada:
         if tipo == "agentStatus":
             return self._status(aid, g, msg)
         if tipo == "agentToolStart":
+            if aid == g:  # o próprio Gerente: segue inteiro (runInBackground, isTeammateSpawn...), só fica anotado
+                self.ferramentas.setdefault(g, {})[msg["toolId"]] = None
+                return [msg]
             return [self._comecou(aid, g, msg["toolId"], None, msg)]
         if tipo == "agentToolDone":
             return self._acabou(aid, g, [msg["toolId"]])

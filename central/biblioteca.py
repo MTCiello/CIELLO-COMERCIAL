@@ -56,7 +56,7 @@ def _titulo(p: Path, titulos: dict[str, str]) -> str:
     m = re.match(r"\d{4}-\d{2}-\d{2}-(\d{2})(\d{2})\d{2}$", stem)  # gravação: 2026-10-24-134059
     if m:
         return f"Gravação das {m[1]}:{m[2]}"
-    for s, t in titulos.items():  # 2026-10-24-tema-o98-15 (rascunho no estilo) também é do roteiro 2026-10-24-tema
+    for s, t in sorted(titulos.items(), key=lambda x: -len(x[0])):  # o mais longo primeiro: tema-2 não vira tema; 2026-10-24-tema-o98-15 (rascunho no estilo) também é do roteiro 2026-10-24-tema
         if stem == s or stem.startswith(s + "-"):
             return t
     if p.parent.name == "audio" or p.parent.parent.name == "audio":

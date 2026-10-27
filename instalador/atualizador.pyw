@@ -184,8 +184,11 @@ class Janela:
         self.status.configure(text="Reinstalando as dependências... pode levar alguns minutos.", fg=CARVAO)
         self.escrever("")
         try:
-            comps = set(json.loads((RAIZ / "estado" / "instalacao.json").read_text(encoding="utf-8-sig")).get("componentes") or [])
-        except (OSError, ValueError, AttributeError):
+            info = json.loads((RAIZ / "estado" / "instalacao.json").read_text(encoding="utf-8-sig"))
+            # o que a pessoa escolheu (pedidos), e não só o que ficou de pé: um vídeo que falhou na 1ª vez é tentado de novo
+            # instalação antiga (sem "pedidos"): tenta o vídeo de novo e mantém a voz se já estava
+            comps = set(info["pedidos"]) if info.get("pedidos") else set(info.get("componentes") or []) | {"video"}
+        except (OSError, ValueError, AttributeError, TypeError):
             comps = {"base", "video"}
         opcoes = (["-Voz"] if "voz" in comps else []) + ([] if "video" in comps else ["-SemVideo"])
         cmd = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",

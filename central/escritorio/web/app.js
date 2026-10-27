@@ -557,7 +557,13 @@ $('#tela-cheia').onclick = () => { fecharMenus(); document.fullscreenElement ? d
 $('#desligar').onclick = async () => {
   fecharMenus();
   if (!confirm('Desligar o Ciello OS? Os agentes param e esta janela pode ser fechada. Para voltar, abra pelo ícone Ciello OS.')) return;
-  try { await api('/api/desligar', {}); } catch { /* já estava desligado */ }
+  try {
+    const r = await api('/api/desligar', {});
+    if (r && r.rodando && r.rodando.length) {
+      if (!confirm(`Ainda está rodando: ${r.rodando.join(', ')}. Desligar agora interrompe no meio. Desligar mesmo assim?`)) return;
+      await api('/api/desligar', { forcar: true });
+    }
+  } catch { /* já estava desligado */ }
   offline = true; // o aviso de "servidor desligado" não precisa aparecer: foi você que desligou
   document.body.innerHTML = '<div style="position:fixed;inset:0"><div class="papel-parede"><img src="/web/logo-marfim.svg" alt=""><b>CIELLO OS</b><span>Desligado. Pode fechar esta janela.</span></div></div>';
   setTimeout(() => window.close(), 800);

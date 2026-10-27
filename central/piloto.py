@@ -234,7 +234,8 @@ def publicar_fila(con, c, agora: dt.datetime) -> dict:
             if info["via"] in caidas:
                 _salvar_envio(con, p["post"], rede, estado="na_fila", quando=quando, via=info["via"], erro=f"{prov.NOME} fora do ar: espera a conexão voltar")
                 continue
-            if info["via"] in ("claude", "metricool") and rede in fora_metricool:
+            # sem o conector no Claude só a Ponte para; a API direta do Metricool só para se a conferência viu a marca sem a rede
+            if rede in fora_metricool and (info["via"] == "claude" or (info["via"] == "metricool" and mc.get("marcas"))):
                 _salvar_envio(con, p["post"], rede, estado="na_fila", quando=quando, via=info["via"],
                               erro=f"{conexoes.REDES[rede]} desconectado no Metricool: reconecte lá e confira de novo em Conexões")
                 continue

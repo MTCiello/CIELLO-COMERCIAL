@@ -52,8 +52,12 @@ def marcas(resposta) -> list[dict]:
         for rede, chaves in CHAVES.items():
             for k in chaves:
                 v = nd.get(k) if k in nd else m.get(k)
-                if v and not isinstance(v, bool | int | float):
-                    redes[rede] = v if isinstance(v, str) else str(v.get("username") or v.get("name") or v.get("id") or "conectado")
+                if isinstance(v, list):  # algumas redes (Facebook, por exemplo) vêm como lista de contas
+                    v = next((x for x in v if x), None)
+                if v and not isinstance(v, bool):
+                    if isinstance(v, dict):
+                        v = v.get("username") or v.get("name") or v.get("id") or "conectado"
+                    redes[rede] = str(v)
                     break
                 if v is True:
                     redes[rede] = "conectado"
@@ -121,7 +125,8 @@ def problema() -> dict | None:
     """Para o Bom dia, a janela Conexões e o piloto: o que está desconectado agora (None = tudo certo ou nunca conferido)."""
     r = ultima()
     if r.get("ok") is False:
-        return {"id": "metricool", "nome": "Metricool", "mensagem": r.get("mensagem", ""), "desde": r.get("quando", "")}
+        return {"id": "metricool-conferencia", "nome": "Metricool",  # id próprio: o piloto barra só as redes de "faltam", não o provedor inteiro
+                "mensagem": r.get("mensagem", ""), "desde": r.get("quando", "")}
     return None
 
 

@@ -286,6 +286,12 @@ class TesteFachada(Montagem):
         self.assertEqual(f.traduzir({"type": "agentCreated", "id": 4}), [])
         self.assertEqual(f.visiveis([1, g, self.sdr]), [g, self.sdr])
 
+    def test_ferramenta_do_proprio_gerente_segue_inteira(self):
+        msg = {"type": "agentToolStart", "id": self.gerente, "toolId": "b", "status": "Running", "toolName": "Bash", "runInBackground": True}
+        self.assertEqual(self.fachada.traduzir(msg), [msg])
+        self.assertEqual(self.fachada.traduzir({"type": "agentToolDone", "id": self.gerente, "toolId": "b"}),
+                         [{"type": "agentToolDone", "id": self.gerente, "toolId": "b"}])
+
     def test_sem_gerente_tudo_passa_como_antes(self):
         from nucleo.fachada import Fachada
         f = Fachada(lambda: None, lambda aid: False)
@@ -357,6 +363,16 @@ class TesteInstalacaoDosHooks(unittest.TestCase):
             G.instalar(cfg)
             self.assertFalse(G.de_outra_pasta(cfg))
             self.assertNotIn("agente-de-postagem", cfg.read_text())
+
+    def test_hooks_de_outra_instalacao_viva_ficam(self):
+        with tempfile.TemporaryDirectory() as d:  # um clone de desenvolvimento ao lado do app instalado: não brigam
+            py, script = Path(d) / "python.exe", Path(d) / "central" / "escritorio" / "gancho.py"
+            script.parent.mkdir(parents=True)
+            py.write_text(""); script.write_text("")
+            cfg = Path(d) / "settings.json"
+            cfg.write_text(json.dumps({"hooks": {"Stop": [{"matcher": "", "hooks": [{"type": "command", "command": f'"{py}" "{script}"'}]}]}}))
+            self.assertTrue(G.instalados(cfg))
+            self.assertFalse(G.de_outra_pasta(cfg))
 
 
 class TesteCabecalhoDosAgentes(unittest.TestCase):

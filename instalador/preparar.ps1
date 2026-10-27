@@ -196,7 +196,9 @@ if ($Voz) {
 # ---------------------------------------------------------------- fim
 & $venvPy instalador\atualizacao.py manifesto | Out-Null
 $versao = [string](Get-Content VERSION -ErrorAction SilentlyContinue | Select-Object -First 1)  # [string]: sem isso o JSON leva o objeto inteiro do PowerShell
-@{ versao = $versao; componentes = $componentes; data = (Get-Date -Format s); avisos = $avisos } |
+# pedidos = o que a pessoa escolheu; componentes = o que ficou de pé. O Reinstalar dependências refaz os pedidos que faltaram.
+$pedidos = @('base') + $(if (-not $SemVideo) { 'video' }) + $(if ($Voz) { 'voz' })
+@{ versao = $versao; componentes = $componentes; pedidos = $pedidos; data = (Get-Date -Format s); avisos = $avisos } |
   ConvertTo-Json | Set-Content -Encoding UTF8 "$Pasta\estado\instalacao.json"
 
 Etapa 11 conferir 'Conferindo'

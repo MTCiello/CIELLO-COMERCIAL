@@ -37,8 +37,13 @@ class TesteMetricoolConferir(unittest.TestCase):
         self.assertEqual(r["faltam"], ["instagram"])
         self.assertIn("Instagram não está conectado na marca lumi", r["mensagem"])
         self.assertTrue(mc.texto(r).startswith("PARE"))
-        self.assertIn("metricool", [c["id"] for c in conexoes.caidas()])  # Bom dia e piloto enxergam
+        self.assertIn("metricool-conferencia", [c["id"] for c in conexoes.caidas()])  # Bom dia e piloto enxergam
+        self.assertNotIn("metricool", [c["id"] for c in conexoes.caidas()])  # e o TikTok e o YouTube seguem publicando
         self.assertFalse(mc.ultima()["velha"])
+
+    def test_rede_em_lista_ou_numero_nao_quebra(self):
+        ms = mc.marcas({"data": [{"id": 9, "label": "x", "networksData": {"instagram": ["conta"], "youtube": 12345, "tiktok": []}}]})
+        self.assertEqual(ms[0]["redes"], {"instagram": "conta", "youtube": "12345"})
 
     def test_outra_marca_com_instagram_passa(self):
         r = mc.conferir(RESPOSTA, marca="outra")

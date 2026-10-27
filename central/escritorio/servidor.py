@@ -120,6 +120,7 @@ ACOES = {
 }
 execucoes = {}
 trava = threading.Lock()
+PROCESSOS = set()  # o que executar() rodou e ainda não acabou: o Desligar fecha junto (sem deixar render ou pip órfão)
 PORTA_ATUAL = [3200]  # o login do Google/TikTok volta para esta porta
 
 
@@ -428,11 +429,15 @@ def executar(rotulo, agente, args, acao="tarefa"):
         try:
             proc = subprocess.Popen([PY, *args], cwd=RAIZ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                     text=True, encoding="utf-8", errors="replace", env=env)
+            with trava:
+                PROCESSOS.add(proc)
             for linha in proc.stdout:
                 with trava:
                     ex["saida"] = (ex["saida"] + linha)[-60000:]
             ex["codigo"] = proc.wait()
             proc.stdout.close()
+            with trava:
+                PROCESSOS.discard(proc)
         except OSError as e:
             ex["saida"] += f"\nNão consegui rodar: {e}"
             ex["codigo"] = -1
@@ -804,6 +809,10 @@ class Painel(BaseHTTPRequestHandler):
                                 pedido.get("modelo"))
             return self._json({"id": t.id})
         if self.path == "/api/desligar":
+            with trava:
+                rodando = [ex["rotulo"] for ex in execucoes.values() if not ex["terminou"]]
+            if rodando and not pedido.get("forcar"):  # atualização ou render no meio: a tela pergunta de novo antes
+                return self._json({"ok": False, "rodando": rodando})
             threading.Thread(target=desligar, daemon=True).start()
             return self._json({"ok": True})
         if self.path == "/api/terminal/fechar":
@@ -842,6 +851,21 @@ class Painel(BaseHTTPRequestHandler):
 
 
 SERVIDOR = [None]
+
+
+def encerrar_processos():
+    """Fecha o que ainda roda em segundo plano, com os filhos (git, pip, ffmpeg, node, claude)."""
+    with trava:
+        vivos = [p for p in PROCESSOS if p.poll() is None]
+    for p in vivos:
+        try:
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/PID", str(p.pid), "/T", "/F"], capture_output=True, timeout=15,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            else:
+                p.kill()
+        except (OSError, subprocess.SubprocessError):
+            pass
 
 
 def desligar():
@@ -888,6 +912,7 @@ def main():
     except KeyboardInterrupt:
         pass
     terminais.fechar_todos()
+    encerrar_processos()
     os._exit(0)  # o escritório e os terminais têm threads próprias: desligar é desligar tudo
 
 

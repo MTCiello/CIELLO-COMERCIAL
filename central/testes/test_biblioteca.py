@@ -75,6 +75,11 @@ class TesteBiblioteca(unittest.TestCase):
         self.assertNotIn("midia/2026-10-24-ia-que-trabalha-2.mp4", [v["rel"] for v in ps["2026-10-24-ia-que-trabalha"]["videos"]])
         self.assertTrue(ps["2026-10-24-ia-que-trabalha-2"]["publicado"])
 
+    def test_titulo_do_roteiro_mais_longo_ganha(self):
+        t = {"2026-10-24-tema": "Tema A", "2026-10-24-tema-2": "Tema B"}
+        self.assertEqual(biblioteca._titulo(Path("midia/final/2026-10-24-tema-2.mp4"), t), "Tema B")
+        self.assertEqual(biblioteca._titulo(Path("midia/final/2026-10-24-tema-o98-15.mp4"), t), "Tema A")
+
     def test_so_abre_arquivo_das_pastas_da_biblioteca(self):
         self.assertIsNotNone(biblioteca.caminho("midia/final/2026-10-24-ia-que-trabalha.mp4"))
         for rel in ("estado/segredo.json", "../fora.txt", "/etc/passwd", "midia\\x.mp4", "midia/nao-existe.mp4"):

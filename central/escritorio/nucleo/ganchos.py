@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sys
 import time
@@ -112,9 +113,16 @@ def de_outra_pasta(caminho=None):
     for entradas in (dados.get("hooks") or {}).values():
         for e in entradas if isinstance(entradas, list) else []:
             for h in (e.get("hooks") or []) if isinstance(e, dict) else []:
-                if isinstance(h, dict) and _nosso(h.get("command")) and h.get("command") != atual:
+                if isinstance(h, dict) and _nosso(h.get("command")) and h.get("command") != atual and not _de_pe(h["command"]):
                     return True
     return False
+
+
+def _de_pe(cmd):
+    """O Python e o gancho.py do comando ainda existem? Então é outra instalação viva (um clone de desenvolvimento,
+    por exemplo) e não mexemos: senão as duas ficariam trocando os hooks uma da outra a cada início."""
+    partes = re.findall(r'"([^"]+)"', cmd)
+    return len(partes) >= 2 and all(Path(x).exists() for x in partes[:2])
 
 
 def instalar(caminho=None):
