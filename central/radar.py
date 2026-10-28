@@ -78,13 +78,23 @@ def parse_github(js):
             for r in js.get("items", [])]
 
 
+# a busca do GitHub recusa (HTTP 422) mais de 5 operadores AND/OR/NOT numa consulta: os termos vão em grupos
+GITHUB_TERMOS = (("llm", "ai", "agent", "chatgpt"), ("claude", "mcp", "gpt", "gemini"))
+
+
 def github(desde: dt.date):
-    q = f"created:>{desde.isoformat()} stars:>100 (llm OR ai OR agent OR chatgpt OR claude OR mcp OR gpt OR gemini)"
-    url = "https://api.github.com/search/repositories?" + urllib.parse.urlencode({"q": q, "sort": "stars", "order": "desc", "per_page": 30})
     h = {"Accept": "application/vnd.github+json"}
     if os.environ.get("GITHUB_TOKEN"):
         h["Authorization"] = f"Bearer {os.environ['GITHUB_TOKEN']}"
-    return parse_github(baixar(url, headers=h))
+    vistos, out = set(), []
+    for termos in GITHUB_TERMOS:
+        q = f"created:>{desde.isoformat()} stars:>100 ({' OR '.join(termos)})"
+        url = "https://api.github.com/search/repositories?" + urllib.parse.urlencode({"q": q, "sort": "stars", "order": "desc", "per_page": 30})
+        for it in parse_github(baixar(url, headers=h)):
+            if it["url"] not in vistos:
+                vistos.add(it["url"])
+                out.append(it)
+    return out
 
 
 def parse_hn(js):
@@ -115,11 +125,31 @@ def parse_reddit(js, sub):
     return out
 
 
+def parse_reddit_rss(xml: bytes, sub):
+    """O feed Atom do Reddit (sem votos): serve quando o .json é bloqueado (HTTP 403 sem login)."""
+    ns = {"a": "http://www.w3.org/2005/Atom"}
+    out = []
+    for e in ET.fromstring(xml).iter("{http://www.w3.org/2005/Atom}entry"):
+        link = e.find("a:link", ns)
+        resumo = re.sub(r"<[^>]+>", " ", e.findtext("a:content", "", ns))
+        out.append(item("reddit", e.findtext("a:title", "", ns), link.get("href", "") if link is not None else "",
+                        (e.findtext("a:updated", "", ns) or "")[:10] or None, 0, resumo, {"sub": sub}))
+    return out
+
+
 def reddit(dias: int):
     t = "week" if dias <= 7 else "month"
-    out = []
+    out, falhas = [], 0
     for s in REDDIT_SUBS:
-        out += parse_reddit(baixar(f"https://www.reddit.com/r/{s}/top.json?t={t}&limit=25"), s)
+        try:
+            out += parse_reddit(baixar(f"https://www.reddit.com/r/{s}/top.json?t={t}&limit=25"), s)
+        except Exception:  # noqa: BLE001 - o Reddit bloqueia o .json sem login com frequência
+            try:
+                out += parse_reddit_rss(baixar(f"https://www.reddit.com/r/{s}/top/.rss?t={t}&limit=25", json_=False), s)
+            except Exception:  # noqa: BLE001
+                falhas += 1
+    if falhas == len(REDDIT_SUBS):
+        raise RuntimeError("o Reddit bloqueou o .json e o feed RSS (acontece sem login; as outras fontes cobrem)")
     return out
 
 

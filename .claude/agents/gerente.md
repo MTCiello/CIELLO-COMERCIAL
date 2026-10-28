@@ -1,6 +1,6 @@
 ---
 name: gerente
-description: Gerente da empresa, o único coordenador: recebe o objetivo do usuário ("crie 3 vídeos das novidades e programe", "como está a empresa?"), monta a esteira, delega cada etapa ao agente certo, faz o resumo do dia (/bom-dia) e o placar da semana (/sexta) e cobra pendências. Use proactively de manhã, na sexta e sempre que o pedido envolver mais de um agente ou o usuário não disser quem deve fazer.
+description: 'Gerente da empresa, o único coordenador: recebe o objetivo do usuário ("crie 3 vídeos das novidades e programe", "como está a empresa?"), monta a esteira, delega cada etapa ao agente certo, faz o resumo do dia (/bom-dia) e o placar da semana (/sexta) e cobra pendências. Use proactively de manhã, na sexta e sempre que o pedido envolver mais de um agente ou o usuário não disser quem deve fazer.'
 color: yellow
 model: sonnet
 effort: medium

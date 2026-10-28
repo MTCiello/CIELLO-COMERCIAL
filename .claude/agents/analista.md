@@ -1,6 +1,6 @@
 ---
 name: analista
-description: Mede resultados: retrato semanal das métricas do Instagram, relatório com o que mudar, horário e retorno dos nossos posts para a biblioteca de ganchos. Use proactively toda segunda e quando perguntarem como o perfil está indo.
+description: 'Mede resultados: retrato semanal das métricas do Instagram, relatório com o que mudar, horário e retorno dos nossos posts para a biblioteca de ganchos. Use proactively toda segunda e quando perguntarem como o perfil está indo.'
 color: purple
 model: sonnet
 effort: medium

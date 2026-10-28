@@ -41,7 +41,7 @@ Cada tela tem um tipo de layout (`ux` em `APPS`, tabela `LAYOUTS` em `app.js`). 
 
 | Layout | Telas | Janela mín. | Janela máx. | Conteúdo máx. |
 |---|---|---|---|---|
-| Painel | Financeiro, Comercial, Conteúdo, Rede social, Anúncios | 760 × 480 | 1440 × 960 | 1180 |
+| Painel | Financeiro, Comercial, Conteúdo, Rede social, Anúncios, Biblioteca | 760 × 480 | 1440 × 960 | 1180 |
 | Lista | Tendências, Equipe, Atendimento, Conexões | 640 × 440 | 1200 × 960 | 1040 |
 | Estúdio | Estúdio de Vídeo, Estúdio de Voz, Gerente (objetivos) | 720 × 520 | 1320 × 960 | 1120 |
 | Leitura | Bom dia, cada agente, Boas-vindas, Concorrentes | 520 × 420 | 900 × 900 | 760 |

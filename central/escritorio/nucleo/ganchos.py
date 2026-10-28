@@ -101,6 +101,22 @@ def instalados(caminho=None):
     return False
 
 
+def de_outra_pasta(caminho=None):
+    """Nossos hooks apontam para outra instalação (pasta apagada, movida ou reinstalada em outro disco)?
+    Aí cada ferramenta do Claude Code mostra "No such file or directory" e o escritório não recebe os eventos."""
+    try:
+        dados = _ler_config(caminho or CONFIG_CLAUDE)
+    except (OSError, ValueError):
+        return False
+    atual = _comando()
+    for entradas in (dados.get("hooks") or {}).values():
+        for e in entradas if isinstance(entradas, list) else []:
+            for h in (e.get("hooks") or []) if isinstance(e, dict) else []:
+                if isinstance(h, dict) and _nosso(h.get("command")) and h.get("command") != atual:
+                    return True
+    return False
+
+
 def instalar(caminho=None):
     caminho = caminho or CONFIG_CLAUDE
     dados = _ler_config(caminho)

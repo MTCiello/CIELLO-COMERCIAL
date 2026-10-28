@@ -276,6 +276,29 @@ class TesteInstalacaoDosHooks(unittest.TestCase):
             self.assertEqual(json.loads(cfg.read_text()), {"model": "opus", "hooks": {"PreToolUse": [outro]}})
 
 
+    def test_hooks_de_outra_instalacao_sao_reapontados(self):
+        with tempfile.TemporaryDirectory() as d:
+            cfg = Path(d) / "settings.json"
+            velho = '"C:\\Ciello\\agente-de-postagem\\.venv\\Scripts\\pythonw.exe" "C:\\Ciello\\agente-de-postagem\\central\\escritorio\\gancho.py"'
+            cfg.write_text(json.dumps({"hooks": {"Stop": [{"matcher": "", "hooks": [{"type": "command", "command": velho}]}]}}))
+            self.assertTrue(G.instalados(cfg))
+            self.assertTrue(G.de_outra_pasta(cfg))
+            G.instalar(cfg)
+            self.assertFalse(G.de_outra_pasta(cfg))
+            self.assertNotIn("agente-de-postagem", cfg.read_text())
+
+
+class TesteCabecalhoDosAgentes(unittest.TestCase):
+    def test_todo_agente_tem_cabecalho_que_o_claude_code_aceita(self):
+        from nucleo.residentes import problema_no_cabecalho
+        agentes = sorted((Path(__file__).resolve().parents[2] / ".claude" / "agents").glob("*.md"))
+        self.assertGreaterEqual(len(agentes), 13)
+        for p in agentes:
+            self.assertEqual(problema_no_cabecalho(p.read_text(encoding="utf-8").split("---")[1]), "", p.name)
+        self.assertIn("aspas", problema_no_cabecalho("name: x\ndescription: Faz vídeos: narração e render"))
+        self.assertEqual(problema_no_cabecalho("name: x\ndescription: 'Faz vídeos: narração'"), "")
+
+
 class TesteWebSocket(unittest.TestCase):
     def test_quadros_mascarados_grandes_e_ping(self):
         a, b = socket.socketpair()
@@ -407,6 +430,24 @@ class TesteAtivos(unittest.TestCase):
             self.assertEqual((P.config()["areas"], P.config()["areasVistas"]), ({}, []))  # as áreas refazem com as salas novas
             P.gravar_layout({**novo, "cielloLayout": None})  # o editor salva sem a versão
             self.assertEqual(P.ler_layout()["cielloLayout"], 7)  # e não troca de novo
+
+    def test_layout_v6_importado_pela_boas_vindas_fica(self):
+        """O dados-ciello.zip traz o layout v6: importado, ele não pode virar o padrão v7 ao abrir."""
+        import zipfile
+        from nucleo import persistencia as P
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        import dados_iniciais as D
+        v6 = {"version": 1, "cols": 27, "rows": 20, "cielloLayout": 6, "areas": [{"label": "Arquivos G"}]}
+        buf = __import__("io").BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("escritorio/layout.json", json.dumps(v6))
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(P, "CASA", Path(d) / "casa"), \
+                mock.patch.object(D, "RAIZ", Path(d)), mock.patch.object(P, "LAYOUT_ANTIGO", Path(d) / "nao-existe.json"):
+            self.assertTrue(D.importar(buf.getvalue())["ok"])
+            lay = P.ler_layout()
+            self.assertEqual((lay["cielloLayout"], lay["areas"]), (6, [{"label": "Arquivos G"}]))
+            P.gravar_layout({**lay, "cielloImportado": None, "cielloLayout": None})  # o editor salva sem os campos
+            self.assertEqual(P.ler_layout()["areas"], [{"label": "Arquivos G"}])
 
     def test_padrao_de_4_salas_vira_o_novo(self):
         from nucleo import persistencia as P
