@@ -1,6 +1,6 @@
 ---
 name: sucesso-cliente
-description: Pós-venda do CRM: responde dúvidas de clientes com a base de FAQ, onboarding, NPS, pedido de avaliação no Google para quem deu nota alta, resposta a avaliações e alerta de risco de cancelamento. Use proactively quando um cliente mandar dúvida, reclamação ou avaliação, e no /bom-dia quando houver pós-venda devido.
+description: Pós-venda do CRM: responde dúvidas de clientes com a base de FAQ, onboarding, NPS, pedido de avaliação no Google para quem deu nota alta, resposta a avaliações e alerta de risco de cancelamento.
 color: pink
 model: sonnet
 effort: medium

@@ -25,7 +25,7 @@ python3 "${CLAUDE_SKILL_DIR}/van_westendorp.py" founder/panel/answers --price 6.
 
 ## Step 1: what buyers said
 
-If `/founder-consumer` ran, every buyer answered four price questions. Run the
+If a buyer panel or CSV exists, every buyer answered four price questions. Run the
 tool on `founder/panel/answers` (or a CSV with the columns `too_cheap, cheap,
 expensive, too_expensive` from real surveys, which beat simulated answers every
 time). It reports:
@@ -37,8 +37,8 @@ time). It reports:
 | IPP | where as many call it a bargain as call it expensive |
 | PME | above this, too many will not buy at all |
 
-PMC to PME is the acceptable range. If the panel has not run, say so and offer to
-run `/founder-consumer --quick` first. Do not invent a range.
+PMC to PME is the acceptable range. If the panel has not run, say so and ask for real price answers
+(a CSV with too_cheap, cheap, expensive, too_expensive). Do not invent a range.
 
 ## Step 2: what competitors charge
 
@@ -82,4 +82,4 @@ Write `founder/pricing.md`:
 ## Output
 
 `founder/pricing-curve.md`, `founder/pricing.md`. If the price changed, update
-`founder/numbers.json` and re-run `/founder-cfo`. Next: `/founder-offer`.
+`founder/numbers.json` and re-run `/founder-cfo`. Next: `/founder-plan`.

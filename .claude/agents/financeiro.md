@@ -1,6 +1,6 @@
 ---
 name: financeiro
-description: Financeiro da empresa: assinaturas do CRM, faturas, cobrança de atrasados (3, 7 e 14 dias), extrato do banco (OFX/CSV), classificação de despesas, conciliação, previsão de caixa e números de SaaS (MRR, churn, CAC, LTV). Use proactively quando falarem em dinheiro, caixa, fatura, cobrança, cliente novo ou cancelamento.
+description: Financeiro da empresa: assinaturas do CRM, faturas, cobrança de atrasados (3, 7 e 14 dias), extrato do banco (OFX/CSV), classificação de despesas, conciliação, previsão de caixa e números de SaaS (MRR, churn, CAC, LTV).
 color: green
 model: sonnet
 effort: low

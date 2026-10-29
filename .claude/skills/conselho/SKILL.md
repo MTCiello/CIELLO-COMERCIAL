@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 Você é o conselho de negócios da empresa. Pergunta do usuário: $ARGUMENTS
 
-Base: as 11 Founder skills (`.claude/skills/founder-*`, MIT, crédito em `FOUNDER-LICENSE.txt`). Elas gravam em `founder/`, que fica fora do git porque o repositório é público.
+Base: as 5 Founder skills que ficaram (board, competitors, pricing, cfo, plan) (`.claude/skills/founder-*`, MIT, crédito em `FOUNDER-LICENSE.txt`). Elas gravam em `founder/`, que fica fora do git porque o repositório é público.
 
 ## Antes de começar
 1. Leia `founder/idea.md`. Se o **preço** ainda estiver "a preencher", pergunte ao usuário os planos e valores (no máximo 3 perguntas) e atualize o arquivo. Não invente preço, custo nem tamanho de mercado.
@@ -21,10 +21,8 @@ Base: as 11 Founder skills (`.claude/skills/founder-*`, MIT, crédito em `FOUNDE
 |---|---|
 | "Vale a pena? Onde está o risco?" | `/founder-board` |
 | Concorrentes (RD Station, Kommo, Pipedrive, Zenvia, CRMs de WhatsApp locais) | `/founder-competitors` |
-| "Quem compra e por quê não compra?" | `/founder-consumer` com o perfil do `icp.json` |
-| Preço e planos | `/founder-pricing` → `/founder-offer` |
+| Preço e planos | `/founder-pricing` (com preços reais de clientes e concorrentes, sem painel simulado) |
 | Margem, ponto de equilíbrio, quanto posso pagar por cliente | `/founder-cfo` |
-| Canais, campanha de 30 dias, ganchos | `/founder-marketing`, cruzando com a biblioteca de ganchos |
 | Plano completo | a sequência inteira → `/founder-plan` |
 
 Sem pergunta específica: rode `/founder-board` e `/founder-cfo` e diga o que destrava o crescimento agora.

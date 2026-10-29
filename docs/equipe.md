@@ -29,7 +29,7 @@ Origem dos 4 novos: o reel "10 agentes de IA que toda empresa devia ter". Avalia
 | `/bom-dia` | todo dia de manhã | gerente → caixa-entrada, financeiro, sucesso-cliente e sdr conforme o briefing → uma tela com as 3 prioridades |
 | `/sexta` | sexta à tarde | placar (gerente) + resumo financeiro + vigia de concorrentes (pesquisador) + voz do cliente → uma decisão para a semana |
 | `/segunda` | segunda de manhã | analista + pesquisador em paralelo → gestor-anuncios |
-| `/conselho` | decisões de negócio (preço, oferta, onde investir) | Founder skills (conselho, CFO, painel de 100 compradores, marketing…) com os dados reais da empresa |
+| `/conselho` | decisões de negócio (preço, oferta, onde investir) | Founder skills (board, concorrentes, preço, CFO e plano) com os dados reais da empresa |
 
 **Modelo e esforço por tarefa:** o Gerente classifica cada etapa e escolhe o modelo e o esforço antes de delegar, equilibrando qualidade e economia: `haiku · low` só para o que é interno e fácil de conferir (resumo, triagem, trocar a cor de um botão); `sonnet` (esforço `low` a `high`) para tudo que vai para cliente ou público ou mexe com dinheiro, roteiros, pesquisa e código pequeno; `opus · high` para arquitetura, bug difícil, mudanças grandes e estratégia. Resultado que não passa na conferência do Gerente é refeito um nível acima. A tabela está em `.claude/agents/gerente.md`, cada agente tem um padrão no cabeçalho (`model`, `effort`) e a caixa de objetivos abre o Gerente no `sonnet`.
 

@@ -92,20 +92,19 @@ its job.
 - Score the business, not the founder.
 - No made-up facts. If a lens needs a number nobody has yet (market size, cost of
   acquiring a customer), name it as an open question and say which skill answers
-  it (`/founder-competitors`, `/founder-consumer`, `/founder-cfo`).
+  it (`/founder-competitors`, `/founder-cfo`).
 - A PASS is a result, not a failure. Say it plainly.
 
 ## Output
 
 `founder/idea.md`, `founder/board/` (brief and three memos), `founder/board.md`.
 Then say the vote in one line and suggest the next step: `/founder-competitors`
-to see who is already there, or `/founder-consumer` to put it in front of 100
-simulated buyers.
+to see who is already there.
 
 ## Where the pack goes next
 
 ```
-board -> competitors -> consumer -> pricing -> offer -> cfo -> marketing -> brand -> ops -> launch -> plan
+board -> competitors -> pricing -> cfo -> plan
 ```
 
 Every skill can also run on its own; each reads whatever is already in `founder/`.

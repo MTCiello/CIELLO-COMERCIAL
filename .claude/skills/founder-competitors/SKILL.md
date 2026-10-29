@@ -72,6 +72,5 @@ Write `founder/competitors.md`:
 
 ## Output
 
-`founder/competitors.csv`, `founder/competitors.md`. Next: `/founder-consumer`
-uses the complaints to write real objections; `/founder-pricing` uses the price
-range.
+`founder/competitors.csv`, `founder/competitors.md`. Next: `/founder-pricing`
+uses the price range.

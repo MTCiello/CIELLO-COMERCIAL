@@ -1,6 +1,6 @@
 ---
 name: sdr
-description: Prospecção ativa do CRM: encontra empresas da região que vendem pelo WhatsApp, qualifica, escreve a 1ª mensagem personalizada e mantém a cadência de follow-up. Use proactively para leads, prospecção, lista de empresas ou follow-ups do dia.
+description: Prospecção ativa do CRM: encontra empresas da região que vendem pelo WhatsApp, qualifica, escreve a 1ª mensagem personalizada e mantém a cadência de follow-up.
 color: blue
 model: sonnet
 effort: medium
