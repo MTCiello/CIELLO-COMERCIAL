@@ -12,8 +12,9 @@ import subprocess
 
 import dados
 
-# ferramentas que o Claude pode usar sem pedir: ler e escrever arquivos do assistente, rodar os scripts dele e pesquisar
-FERRAMENTAS = "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash(python central/*),Bash(node reels/*),mcp__claude_ai_Metricool*,mcp__claude_ai_vidIQ*"
+# ferramentas que o Claude pode usar sem pedir: ler e escrever arquivos do assistente, rodar os scripts dele e pesquisar.
+# Conectores do claude.ai vão pelo nome inteiro do servidor: o Claude Code ignora curinga no meio do nome (mcp__claude_ai_Metricool*)
+FERRAMENTAS = "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash(python central/*),Bash(node reels/*),mcp__claude_ai_Metricool_Social_Media_Management,mcp__claude_ai_vidIQ"
 
 
 def comando() -> list[str] | None:
