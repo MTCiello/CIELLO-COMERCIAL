@@ -1,6 +1,6 @@
 """Piloto automático da rede social: pesquisa, produz e publica sem você, e só te chama para o que é humano.
 
-A cada rodada (o Agendador do Windows roda de hora em hora, ver agendar.cmd):
+A cada rodada (o Agendador do Windows roda de hora em hora, ligado pelo instalador ou no Ciello OS, em Rede social > Ajustes):
   1. checa as conexões em uso (provedor caído: não publica no escuro, guarda na fila e avisa);
   2. sincroniza números e comentários para o banco local e avalia os posts com 7 dias (biblioteca de ganchos);
   3. comentários: responde sozinho elogio e pergunta que o FAQ cobre; quem quer comprar vira lead no Comercial;

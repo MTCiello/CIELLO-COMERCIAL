@@ -37,7 +37,7 @@ Também dá para chamar um agente direto: "use o sdr para gerar 20 leads de odon
 
 ## Escritório de agentes
 
-O escritório é nosso: a tela pixel (`escritorio/`) começou como fork do [pixel-agents](https://github.com/pablodelucca/pixel-agents) v1.5.0 (MIT, © Pablo De Lucca; personagens baseados no [Metro City, de JIK-A-4](https://jik-a-4.itch.io/metrocity-free-topdown-character-pack)) e quem a alimenta é o núcleo em Python do Ciello OS (`central/escritorio/nucleo/`). **Não precisa de Node** e abre junto com o `Ciello.cmd`. A aparência é a mesma do pixel-agents (sprites, móveis e layout conferidos pixel a pixel com o 1.5.0); daqui para frente dá para mudar o que quiser (personagens, escritório, menus).
+O escritório é nosso: a tela pixel (`escritorio/`) começou como fork do [pixel-agents](https://github.com/pablodelucca/pixel-agents) v1.5.0 (MIT, © Pablo De Lucca; personagens baseados no [Metro City, de JIK-A-4](https://jik-a-4.itch.io/metrocity-free-topdown-character-pack)) e quem a alimenta é o núcleo em Python do Ciello OS (`central/escritorio/nucleo/`). **Não precisa de Node** e abre junto com o Ciello OS. A aparência é a mesma do pixel-agents (sprites, móveis e layout conferidos pixel a pixel com o 1.5.0); daqui para frente dá para mudar o que quiser (personagens, escritório, menus).
 
 **Como funciona:** o núcleo acompanha toda sessão do Claude Code aberta na pasta do assistente (`~/.claude/projects/<pasta>`): cada sessão vira um personagem, cada ferramenta vira animação, subagentes aparecem ao lado de quem os chamou. Na primeira vez o layout padrão é instalado em `~/.ciello/escritorio/layout.json` (se você já usava o pixel-agents, o seu layout de `~/.pixel-agents` é trazido).
 
@@ -64,7 +64,7 @@ O editor **Layout** do escritório (engrenagem → Layout) continua funcionando 
 
 ## Ciello OS: o app inteiro numa área de trabalho
 
-Clique duas vezes em **`Ciello.cmd`**. Abre numa janela própria do Edge (ou Chrome), sem barra de endereço, como um programa instalado.
+Abra pelo ícone **Ciello OS** (área de trabalho ou menu Iniciar). Abre numa janela própria do Edge (ou Chrome), sem barra de endereço, como um programa instalado.
 
 - **O fundo da área de trabalho é o Escritório**, ao vivo, **em português** e no azul do Ciello OS, centralizado ao abrir. Ele roda dentro do próprio Ciello OS (`--sem-escritorio` desliga; aí o fundo mostra a logo).
 - **Engrenagem na barra de tarefas:** os controles do escritório (**+ Agente**, **Layout**, **Configurações**, botões de zoom e os cartões dos agentes) ficam escondidos; a engrenagem mostra e esconde. Os menus usam as cores e as fontes do Ciello OS; os balões em cima dos personagens continuam em pixel.

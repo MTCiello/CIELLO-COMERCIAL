@@ -94,7 +94,7 @@ async function api(caminho, corpo) {
     if (offline) { offline = false; aviso({ titulo: 'Conectado de novo', texto: 'O servidor do Ciello OS voltou.', cor: '#1F8A4C' }); }
     return await r.json();
   } catch (e) {
-    if (!offline) { offline = true; aviso({ titulo: 'Servidor desligado', texto: 'Abra o Ciello.cmd de novo para reconectar.', cor: '#C8442F' }); }
+    if (!offline) { offline = true; aviso({ titulo: 'Servidor desligado', texto: 'Abra o Ciello OS de novo pelo ícone para reconectar.', cor: '#C8442F' }); }
     throw e;
   }
 }
@@ -472,6 +472,14 @@ $('#centralizar').onclick = () => { fecharMenus(); const f = $('#escritorio'); i
 $('#ver-escritorio').onclick = alternarEscritorio;
 $('#minimizar-tudo').onclick = () => { fecharMenus(); mostrarEscritorio(); };
 $('#tela-cheia').onclick = () => { fecharMenus(); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); };
+$('#desligar').onclick = async () => {
+  fecharMenus();
+  if (!confirm('Desligar o Ciello OS? Os agentes param e esta janela pode ser fechada. Para voltar, abra pelo ícone Ciello OS.')) return;
+  try { await api('/api/desligar', {}); } catch { /* já estava desligado */ }
+  offline = true; // o aviso de "servidor desligado" não precisa aparecer: foi você que desligou
+  document.body.innerHTML = '<div style="position:fixed;inset:0"><div class="papel-parede"><img src="/web/logo-marfim.svg" alt=""><b>CIELLO OS</b><span>Desligado. Pode fechar esta janela.</span></div></div>';
+  setTimeout(() => window.close(), 800);
+};
 $('#sino').onclick = (e) => { e.stopPropagation(); const ab = $('#central').hidden; fecharMenus(); if (ab) { desenharCentral(); $('#central').hidden = false; naoLidas = 0; contarNaoLidas(); } };
 $('#trabalhando').onclick = () => abrir('equipe');
 $('#central').addEventListener('click', (e) => { const n = e.target.closest('[data-chave]'); if (n) abrir(n.dataset.chave); });
@@ -624,7 +632,7 @@ function redesenharTudo() {
 
 async function operar(op, dados) {
   let r;
-  try { r = await api('/api/operar', { op, dados }); } catch { return { ok: false, saida: 'Servidor desligado: abra o Ciello.cmd de novo.' }; }
+  try { r = await api('/api/operar', { op, dados }); } catch { return { ok: false, saida: 'Servidor desligado: abra o Ciello OS de novo pelo ícone.' }; }
   if (r.erro) r = { ok: false, saida: r.erro };
   if (r.ok) redesenharTudo();
   return r;
@@ -634,7 +642,7 @@ async function enviarArquivo(tipo, arquivo, opcoes = {}) {
   try {
     const r = await fetch(`/api/enviar?${q}`, { method: 'POST', headers: { 'X-Ciello-Token': TOKEN, 'Content-Type': 'application/octet-stream' }, body: arquivo });
     const d = await r.json(); if (d.ok) redesenharTudo(); return d.erro ? { ok: false, saida: d.erro } : d;
-  } catch { return { ok: false, saida: 'Servidor desligado: abra o Ciello.cmd de novo.' }; }
+  } catch { return { ok: false, saida: 'Servidor desligado: abra o Ciello OS de novo pelo ícone.' }; }
 }
 // um clique que roda direto (sem formulário), com aviso do resultado
 async function rapido(op, dados, titulo) {
@@ -1167,7 +1175,7 @@ async function renderComercial(j) {
     <div class="passos"><ol>
       <li><button class="bt ${d.tem_consultas ? '' : 'pri'}" data-fn="consultas">Escolher segmentos e cidades</button> ${d.tem_consultas ? '<span class="chip pronto">buscas prontas</span>' : ''}</li>
       <li><button class="bt ${d.tem_consultas && !d.tem_resultado ? 'pri' : ''}" data-acao="sdr_buscar" ${d.tem_consultas && d.tem_buscador ? '' : 'disabled'}>Buscar no Google Maps</button>
-        ${d.tem_buscador ? '<small class="neutro">leva de 5 a 30 minutos; acompanhe na janela que abre</small>' : '<small class="ruim">buscador não instalado: rode o instalar.cmd de novo</small>'}</li>
+        ${d.tem_buscador ? '<small class="neutro">leva de 5 a 30 minutos; acompanhe na janela que abre</small>' : '<small class="ruim">buscador não instalado: no menu Iniciar do Windows, Ciello OS &gt; Reinstalar dependências</small>'}</li>
       <li><button class="bt ${d.tem_resultado ? 'pri' : ''}" data-acao="sdr_qualificar" ${d.tem_resultado ? '' : 'disabled'}>Qualificar o resultado</button> <small class="neutro">junta as empresas novas na sua lista de leads</small></li>
       <li>Abra a aba <a data-fn="aba" data-aba="hoje" href="#">Hoje</a>: as melhores aparecem com a 1ª mensagem pronta.</li></ol></div>
     <h2>Ou importe uma planilha</h2><p class="sub">De outra ferramenta, de um evento ou de uma lista que você já tem.</p><div class="acoes" style="margin-top:0"><button class="bt" data-fn="planilha">Importar planilha de leads</button></div>`;
@@ -1330,7 +1338,7 @@ async function renderRedes(j) {
   const nomeRede = (r) => d.nomes_redes[r] || r;
   j.fns = {
     modo: ({ m }) => rapido('piloto_config', { modo: m }, 'Piloto'),
-    ajustes: () => dialogo(j, { titulo: 'Ajustes do piloto', texto: 'O piloto roda de hora em hora pelo Agendador do Windows (agendar.cmd). Estes ajustes valem já na próxima rodada.',
+    ajustes: () => dialogo(j, { titulo: 'Ajustes do piloto', texto: 'O piloto roda de hora em hora pelo Agendador do Windows, sem abrir janela (o instalador liga; os botões Rodar de hora em hora e Parar de rodar sozinho também). Estes ajustes valem já na próxima rodada.',
       campos: [{ nome: 'antecedencia_dias', rotulo: 'Produzir com quantos dias de antecedência', tipo: 'numero', valor: c.antecedencia_dias, meia: true },
         { nome: 'envio_antecedencia_h', rotulo: 'Agendar no provedor quantas horas antes', tipo: 'numero', valor: c.envio_antecedencia_h, meia: true, dica: 'até essa hora dá para Segurar o post' },
         { nome: 'responder', rotulo: 'Comentários', tipo: 'escolha', opcoes: [['elogios_e_faq', 'Responder elogios e perguntas do FAQ sozinho'], ['elogios', 'Responder só elogios'], ['nunca', 'Nunca responder sozinho']], valor: c.responder },
@@ -1388,11 +1396,12 @@ async function renderRedes(j) {
     corpo = `${caidas}<div class="modos">${Object.entries(P.modos).map(([k, r]) => `<button class="modo ${c.modo === k ? 'on' : ''}" data-fn="modo" data-m="${k}"><b>${esc(r)}</b><small>${{ automatico: 'pesquisa, produz e publica sozinho; você pode segurar qualquer post', aprovar: 'prepara tudo e espera o seu ok em cada post', pausado: 'não produz nem publica; números e comentários continuam' }[k]}</small></button>`).join('')}</div>
     ${semRede ? '<div class="faixa">Nenhuma rede tem por onde publicar. <button class="bt mini pri" data-abrir="conexoes">Abrir Conexões</button></div>' : ''}
     ${P.ia ? '' : '<div class="faixa">Claude Code não encontrado: o piloto produz e publica, mas não escreve roteiros novos sozinho.</div>'}
-    <div class="acoes"><button class="bt pri" data-acao="piloto">${icone('play')} Rodar agora</button><button class="bt" data-fn="ajustes">Ajustes</button><button class="bt" data-abrir="conexoes">Conexões</button></div>
+    <div class="acoes"><button class="bt pri" data-acao="piloto">${icone('play')} Rodar agora</button><button class="bt" data-fn="ajustes">Ajustes</button><button class="bt" data-abrir="conexoes">Conexões</button>
+      <button class="bt" data-acao="rotinas_ligar" title="Liga no Agendador do Windows o piloto (de hora em hora) e o Bom dia (7h), sem janela de CMD">Rodar de hora em hora</button><button class="bt" data-acao="rotinas_desligar">Parar de rodar sozinho</button></div>
     <h2>Fila de publicação (${P.fila.length})</h2><table class="tab"><tr><th>Quando</th><th>Rede</th><th>Post</th><th>Situação</th><th></th></tr>${P.fila.map((e) => `<tr><td>${quandoBr(e.quando)}</td><td>${esc(nomeRede(e.rede))}</td>
       <td>${esc(e.post.slice(11).replace(/-/g, ' '))}${e.erro ? `<br><small class="${e.estado === 'erro' ? 'ruim' : 'neutro'}">${esc(e.erro)}</small>` : ''}</td><td>${chipEnvio(e.estado)}${e.url ? ` <a href="${esc(e.url)}" target="_blank" rel="noopener"><small>ver</small></a>` : ''}</td>
       <td class="acoes-linha">${acoesEnvio(e)}</td></tr>`).join('') || '<tr><td colspan="5">Nada na fila. O piloto coloca aqui cada post pronto, em cada rede ligada.</td></tr>'}</table>
-    <h2>O que o piloto fez</h2><div class="lista">${P.diario.slice(0, 25).map((x) => `<div class="linha-item ${x.ok ? '' : 'achado alto'}"><small class="neutro" style="min-width:110px">${quandoBr(x.quando)}</small><div class="cresce"><small style="white-space:normal;color:var(--tinta)"><b>${esc(x.evento)}</b> · ${esc(x.detalhe)}</small></div></div>`).join('') || '<p class="sub">Ainda não rodou. Clique em Rodar agora ou rode o agendar.cmd para ele rodar de hora em hora.</p>'}</div>`;
+    <h2>O que o piloto fez</h2><div class="lista">${P.diario.slice(0, 25).map((x) => `<div class="linha-item ${x.ok ? '' : 'achado alto'}"><small class="neutro" style="min-width:110px">${quandoBr(x.quando)}</small><div class="cresce"><small style="white-space:normal;color:var(--tinta)"><b>${esc(x.evento)}</b> · ${esc(x.detalhe)}</small></div></div>`).join('') || '<p class="sub">Ainda não rodou. Clique em Rodar agora, ou em Rodar de hora em hora para o Windows rodar sozinho.</p>'}</div>`;
   }
   const novos = d.comentarios.length;
   j.corpo.innerHTML = `<div class="pagina"><h1>Rede social</h1><p class="sub">Piloto ${esc(P.modos[c.modo])} · ${Object.entries(d.redes).filter(([, r]) => r.ativa && r.via).map(([r]) => nomeRede(r)).join(', ') || 'nenhuma rede ligada'}</p>
@@ -1574,7 +1583,7 @@ async function renderVideo(j) {
            ${temEst ? `<button class="bt" data-fn="usar" data-post="${esc(p.post)}" data-modelo="${esc(est.id)}" title="Copia o vídeo no estilo para midia/final/">Usar o do estilo</button>` : ''}`}</div></div>`;
   };
   j.corpo.innerHTML = `<div class="pagina">${secoes}<h1>Estúdio de Vídeo</h1><p class="sub">Roteiro → narração com a voz do Estúdio de Voz (agora: <b>${esc(d.voz)}</b>) → vídeo com a marca da empresa, legenda e trilha. Feito no seu PC com o HyperFrames.</p>${SEM_CLAUDE}
-    ${d.hyperframes ? '' : '<div class="faixa"><span>O motor de vídeo (HyperFrames) ainda não está instalado. Rode o <b>instalar.cmd</b> de novo: ele instala em reels/.</span></div>'}
+    ${d.hyperframes ? '' : '<div class="faixa"><span>O motor de vídeo (HyperFrames) ainda não está instalado. No menu Iniciar do Windows, abra <b>Ciello OS &gt; Reinstalar dependências</b>: ele instala em reels/.</span></div>'}
     <div class="acoes topo"><button class="bt pri" data-fn="novo">+ Novo roteiro</button><button class="bt" data-fn="aba" data-aba="estilos">Galeria de estilos</button><button class="bt" data-abrir="voz">Estúdio de Voz</button><button class="bt" data-abrir="objetivos" title="Os agentes escrevem os roteiros">Pedir roteiros à equipe</button></div>
     <h2>Modelo rápido</h2><div class="modelos">${Object.entries(m).map(([k, x]) => `<button class="modelo ${j.modelo === k ? 'on' : ''}" data-fn="modelo" data-m="${k}"><span class="amostra" style="background:${x.fundo}"><i style="color:${x.texto}">Título</i><i style="color:${x.ouro}">em destaque</i></span><b>${esc(x.nome)}</b><small>${esc(x.descricao)}</small></button>`).join('')}
       <button class="modelo" data-fn="aba" data-aba="estilos"><span class="amostra mosaico">${E.opus98.filter((x) => x.imagem).slice(0, 4).map((x) => `<img src="${esc(x.imagem)}" alt="" loading="lazy">`).join('')}</span><b>Mais ${E.opus98.length + E.biblioteca.length} estilos</b><small>Opus 98 e a biblioteca: o Claude produz o vídeo no estilo que você escolher</small></button></div>
