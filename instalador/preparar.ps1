@@ -1,6 +1,8 @@
 ﻿# Ciello OS: instala tudo o que o assistente e os agentes precisam no Windows.
-# O instalador (CielloOS-Setup.exe) roda este script no fim; também dá para rodar à mão:
+# O instalador (CielloOS-Setup.exe) roda este script escondido, sem janela, e mostra o andamento na própria tela dele;
+# o atalho "Reinstalar dependências" (janela de Atualizações) faz o mesmo. Também dá para rodar à mão:
 #   powershell -ExecutionPolicy Bypass -File instalador\preparar.ps1 [-Voz] [-SemVideo] [-SemClaude] [-SemPausa]
+# Cada etapa sai numa linha "@@ETAPA <n> <chave> <texto>" (de 11), que o instalador e a janela de Atualizações leem.
 # Instala o que faltar: Python 3.12, Git, Node.js, FFmpeg, Claude Code; cria o .venv com as bibliotecas,
 # o gerador de vídeo (Remotion e HyperFrames), o buscador do SDR e, se pedido, o Estúdio de Voz (uns 3 GB).
 # Tudo fica anotado em estado\instalacao.log.
@@ -16,8 +18,9 @@ $ErrorActionPreference = 'Continue'
 # Windows PowerShell 5.1 em PC antigo ainda tenta TLS 1.0: python.org, nodejs.org e gyan.dev recusam
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 $ProgressPreference = 'SilentlyContinue'
-[Console]::OutputEncoding = [Text.Encoding]::UTF8
-$Host.UI.RawUI.WindowTitle = 'Ciello OS: preparando o seu PC'
+# escondido (sem janela) o console pode não deixar mudar título nem codificação: não é motivo para parar
+try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
+try { $Host.UI.RawUI.WindowTitle = 'Ciello OS: preparando o seu PC' } catch { }
 Set-Location $Pasta
 New-Item -ItemType Directory -Force -Path "$Pasta\estado" | Out-Null
 Start-Transcript -Path "$Pasta\estado\instalacao.log" -Append | Out-Null
@@ -25,6 +28,10 @@ $env:PYTHONUTF8 = '1'
 $avisos = New-Object System.Collections.Generic.List[string]
 
 function Titulo($t) { Write-Host ''; Write-Host "==== $t ====" -ForegroundColor Cyan }
+function Etapa($n, $chave, $t) {
+  try { [Console]::Out.WriteLine("@@ETAPA $n $chave $t"); [Console]::Out.Flush() } catch { }
+  Titulo $t
+}
 function Aviso($t) { Write-Host "[aviso] $t" -ForegroundColor Yellow; $avisos.Add($t) }
 function Ok($t) { Write-Host "[ok] $t" -ForegroundColor Green }
 
@@ -77,16 +84,16 @@ Recarregar-Path
 Write-Host ''
 Write-Host '   CIELLO OS  ·  instalando as dependências' -ForegroundColor White
 Write-Host "   Pasta: $Pasta"
-Write-Host '   Pode levar de 10 a 30 minutos na primeira vez. Não feche esta janela.'
+Write-Host '   Pode levar de 10 a 30 minutos na primeira vez.'
 
 # ---------------------------------------------------------------- programas
-Titulo 'Python 3.12'
+Etapa 1 python 'Python 3.12'
 $py = Python312
 if (-not $py) {
   if (-not (Winget 'Python.Python.3.12')) {
     $exe = "$env:TEMP\python-3.12-instalador.exe"
     Baixar 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe' $exe
-    Start-Process $exe -Wait -ArgumentList '/quiet', 'InstallAllUsers=0', 'PrependPath=1', 'Include_launcher=1', 'Include_test=0'
+    Start-Process $exe -Wait -WindowStyle Hidden -ArgumentList '/quiet', 'InstallAllUsers=0', 'PrependPath=1', 'Include_launcher=1', 'Include_test=0'
   }
   Recarregar-Path
   $py = Python312
@@ -97,7 +104,7 @@ Ok "Python: $(& $py.Exe @pyArgs --version)"
 
 # O .venv vem logo depois do Python: é dele que o ícone do Ciello OS depende (.venv\Scripts\pythonw.exe).
 # Se algo opcional mais para baixo falhar, o app abre do mesmo jeito.
-Titulo 'Ambiente Python do assistente (.venv)'
+Etapa 2 venv 'Ambiente Python do assistente (.venv)'
 $venvPy = "$Pasta\.venv\Scripts\python.exe"
 $venvPyw = "$Pasta\.venv\Scripts\pythonw.exe"
 if (Test-Path $venvPy) {
@@ -115,14 +122,15 @@ if (-not (Test-Path $venvPyw)) {
 }
 if (-not (Test-Path $venvPyw)) { Terminar 2 "Não consegui criar o ambiente Python em $Pasta\.venv. Se a pasta está no OneDrive ou em Documentos sincronizados, instale em C:\Ciello\CielloOS." }
 Ok 'Ambiente criado'
+Etapa 3 bibliotecas 'Bibliotecas do Python'
 & $venvPy -m pip install --upgrade pip --disable-pip-version-check -q
 & $venvPy -m pip install -r central\requirements.txt --disable-pip-version-check
 if ($LASTEXITCODE -ne 0) { Aviso 'Algumas bibliotecas do Python não instalaram (veja acima).' } else { Ok 'Bibliotecas do Python' }
 
-Titulo 'Git'
+Etapa 4 git 'Git'
 if (Tem 'git') { Ok 'Git já instalado' } elseif (Winget 'Git.Git') { Ok 'Git instalado' } else { Aviso 'Git não instalou (só o Claude Code e o modo de teste usam).' }
 
-Titulo 'FFmpeg (áudio e vídeo)'
+Etapa 5 ffmpeg 'FFmpeg (áudio e vídeo)'
 if (-not (Tem 'ffmpeg')) {
   if (-not (Winget 'Gyan.FFmpeg') -or -not (Tem 'ffmpeg')) {
     $zip = "$env:TEMP\ffmpeg.zip"
@@ -140,19 +148,19 @@ if (-not (Tem 'ffmpeg')) {
 if (Tem 'ffmpeg') { Ok 'FFmpeg pronto' }
 
 if (-not $SemVideo) {
-  Titulo 'Node.js (gerador de vídeo)'
+  Etapa 6 node 'Node.js (gerador de vídeo)'
   if (Tem 'node') { Ok "Node $(node --version)" } elseif (Winget 'OpenJS.NodeJS.LTS') { Ok 'Node instalado' } else {
     try {
       $msi = "$env:TEMP\node-lts.msi"
       Baixar 'https://nodejs.org/dist/v22.20.0/node-v22.20.0-x64.msi' $msi
-      Start-Process msiexec.exe -Wait -ArgumentList '/i', $msi, '/qn'
+      Start-Process msiexec.exe -Wait -WindowStyle Hidden -ArgumentList '/i', $msi, '/qn'
       Recarregar-Path
     } catch { Aviso "Node não instalou: $_" }
   }
 }
 
 if (-not $SemClaude) {
-  Titulo 'Claude Code (os agentes de IA)'
+  Etapa 7 claude 'Claude Code (os agentes de IA)'
   if (Tem 'claude') { Ok 'Claude Code já instalado' } else {
     # roda numa janela filha: um "exit" dentro do script do Claude encerrava este aqui antes do .venv
     powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "irm https://claude.ai/install.ps1 | iex"
@@ -163,13 +171,13 @@ if (-not $SemClaude) {
 }
 
 # ---------------------------------------------------------------- ambiente do assistente
-Titulo 'Buscador do Google Maps (SDR)'
+Etapa 8 sdr 'Buscador do Google Maps (SDR)'
 & $venvPy central\sdr.py instalar-scraper
 if ($LASTEXITCODE -ne 0) { Aviso 'O buscador do SDR não baixou agora: o SDR funciona com CSV e o Verificar tenta de novo.' }
 
 $componentes = @('base')
 if (-not $SemVideo -and (Tem 'npm')) {
-  Titulo 'Estúdio de Vídeo (Remotion e HyperFrames)'
+  Etapa 9 video 'Estúdio de Vídeo (Remotion e HyperFrames)'
   Push-Location reels
   npm install --no-audit --no-fund
   if ($LASTEXITCODE -eq 0) { $componentes += 'video'; Ok 'Gerador de vídeo' } else { Aviso 'O gerador de vídeo não instalou (veja acima).' }
@@ -180,18 +188,20 @@ if (-not $SemVideo -and (Tem 'npm')) {
 }
 
 if ($Voz) {
-  Titulo 'Estúdio de Voz (Kokoro, Chatterbox e Whisper · uns 3 GB)'
+  Etapa 10 voz 'Estúdio de Voz (Kokoro, Chatterbox e Whisper · uns 3 GB)'
   & $venvPy -m pip install -r central\requirements-voz.txt --disable-pip-version-check
   if ($LASTEXITCODE -eq 0) { $componentes += 'voz'; Ok 'Estúdio de Voz' } else { Aviso 'A voz não instalou. Dá para tentar de novo no Ciello OS: Estúdio de Voz, Instalar agora.' }
 }
 
 # ---------------------------------------------------------------- fim
 & $venvPy instalador\atualizacao.py manifesto | Out-Null
-$versao = (Get-Content VERSION -ErrorAction SilentlyContinue | Select-Object -First 1)
-@{ versao = $versao; componentes = $componentes; data = (Get-Date -Format s); avisos = $avisos } |
+$versao = [string](Get-Content VERSION -ErrorAction SilentlyContinue | Select-Object -First 1)  # [string]: sem isso o JSON leva o objeto inteiro do PowerShell
+# pedidos = o que a pessoa escolheu; componentes = o que ficou de pé. O Reinstalar dependências refaz os pedidos que faltaram.
+$pedidos = @('base') + $(if (-not $SemVideo) { 'video' }) + $(if ($Voz) { 'voz' })
+@{ versao = $versao; componentes = $componentes; pedidos = $pedidos; data = (Get-Date -Format s); avisos = $avisos } |
   ConvertTo-Json | Set-Content -Encoding UTF8 "$Pasta\estado\instalacao.json"
 
-Titulo 'Conferindo'
+Etapa 11 conferir 'Conferindo'
 & $venvPy central\verificar.py --rapido
 
 Write-Host ''

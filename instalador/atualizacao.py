@@ -34,6 +34,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 PADRAO = {"repo": "MTCiello/AGENTE-DE-POSTAGEM", "canal": "estavel", "branch_teste": "main",
           "verificar_ao_abrir": True, "intervalo_horas": 12}
 API = "https://api.github.com"
+SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # chamado pela janela de Atualizações (pythonw): sem CMD piscando
 
 # Caminhos (relativos à pasta do assistente) que a atualização nunca cria, apaga nem sobrescreve.
 PROTEGIDOS = (".git", ".venv", "estado", "audio", "ferramentas", "reels/node_modules", "escritorio/webview-ui/node_modules",
@@ -153,7 +154,7 @@ def consultar(cfg=None, raiz=RAIZ, tempo=15):
 
 def git(raiz, *args, tempo=60):
     return subprocess.run(["git", *args], cwd=raiz, capture_output=True, text=True, encoding="utf-8",
-                          errors="replace", timeout=tempo)
+                          errors="replace", timeout=tempo, creationflags=SEM_JANELA)
 
 
 def consultar_git(raiz=RAIZ, tempo=60):
@@ -326,7 +327,8 @@ def reinstalar_dependencias(antes, depois, raiz=RAIZ, avisar=print):
     for rotulo, cmd in passos:
         avisar(f"Atualizando dependências: {rotulo}...")
         cwd = raiz / "reels" if rotulo == "Gerador de vídeo" else raiz
-        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           creationflags=SEM_JANELA)
         if r.returncode:
             avisar(f"[aviso] {rotulo} não terminou: {(r.stdout + r.stderr).strip()[-600:]}")
     return [p[0] for p in passos]

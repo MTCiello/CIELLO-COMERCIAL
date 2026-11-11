@@ -65,7 +65,7 @@ def salvar_amostra(nome, dados: bytes) -> dict:
     elif ext == ".wav":
         shutil.copy(bruto, voz.AMOSTRA)
     else:
-        return {"ok": False, "saida": "Falta o ffmpeg para converter a gravação (rode o instalar.cmd)."}
+        return {"ok": False, "saida": "Falta o ffmpeg para converter a gravação (menu Iniciar do Windows: Ciello OS > Reinstalar dependências)."}
     seg = duracao(voz.AMOSTRA) or 0
     dica = " Ficou curta: o ideal é de 10 a 20 segundos." if seg < 6 else ""
     return {"ok": True, "saida": f"Sua voz foi salva ({seg:.0f} s).{dica}", "duracao": seg}

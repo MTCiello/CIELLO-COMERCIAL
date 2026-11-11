@@ -160,6 +160,11 @@ def caidas() -> list[dict]:
         e = est.get(pid, {})
         if e and not e.get("ok", True):
             out.append({"id": pid, "nome": PROVEDORES[pid].NOME, "mensagem": e.get("mensagem", ""), "desde": e.get("caiu_em", "")})
+    if usadas & {"claude", "metricool"}:  # a última conferência dos agentes no Metricool (metricool_conferir.py)
+        import metricool_conferir
+        p = metricool_conferir.problema()
+        if p:
+            out.append(p)
     return out
 
 
@@ -172,4 +177,6 @@ def para_janela(historico: dict | None = None) -> dict:
                       "preenchidos": {c["nome"]: (("•" * 6 + cred[c["nome"]][-4:]) if c.get("segredo") else cred[c["nome"]])
                                       for c in p.CAMPOS if cred.get(c["nome"])},
                       "logado": bool(cred.get("refresh_token")), "historico": (historico or {}).get(pid, {})})
-    return {"provedores": lista, "redes": redes(), "nomes_redes": REDES, "cofre_protegido": cofre.protegido()}
+    import metricool_conferir
+    return {"provedores": lista, "redes": redes(), "nomes_redes": REDES, "cofre_protegido": cofre.protegido(),
+            "metricool": {**metricool_conferir.ultima(), "nomes": metricool_conferir.NOMES}}

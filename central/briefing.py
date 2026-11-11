@@ -1,7 +1,7 @@
 """Gerente: o resumo do dia (caixa, vendas, conteúdo) com as 3 prioridades e quem cobra cada pendência.
 
 Lê só o que as outras ferramentas já gravam no PC: financeiro/, comercial/leads.csv, metricas/, radar/, roteiros/,
-midia/final/ e estado/eventos.jsonl. Não usa internet nem créditos, então pode rodar sozinho às 7h (agendar.cmd).
+midia/final/ e estado/eventos.jsonl. Não usa internet nem créditos, então pode rodar sozinho às 7h (instalador/rotinas.pyw).
 
   python central/briefing.py              # resumo do dia -> estado/briefing/AAAA-MM-DD.md
   python central/briefing.py --semana     # placar da semana (para a revisão de sexta)

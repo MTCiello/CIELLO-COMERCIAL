@@ -14,7 +14,7 @@ Objetivo: o Ciello OS pesquisa, produz e publica os reels (e os equivalentes no 
 
 ## A rodada do piloto (de hora em hora)
 
-Rode o `agendar.cmd` uma vez: ele cria a tarefa **Ciello Piloto** no Agendador do Windows. Cada rodada:
+Marque **Rotinas automáticas** no instalador, ou clique em **Rodar de hora em hora** na janela Rede social: isso cria a tarefa **Ciello Piloto** no Agendador do Windows, que roda sem abrir janela. Cada rodada:
 
 1. **Checa as conexões em uso.** Se uma caiu, os posts daquela rede esperam na fila (nada se perde) e o Bom dia avisa.
 2. **Sincroniza** números e comentários para o banco local (`estado/ciello.db`) e avalia os posts com 7 dias.

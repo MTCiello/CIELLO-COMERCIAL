@@ -75,3 +75,12 @@ class TesteEstudioVideo(unittest.TestCase):
             self.assertFalse(conteudo.novo_roteiro("2026-11-23", "Pare de perder cliente no WhatsApp", ["x"])["ok"])  # não sobrescreve
             self.assertFalse(conteudo.novo_roteiro("amanhã", "x", ["y"])["ok"])
             self.assertFalse(conteudo.novo_roteiro("2026-11-24", "x", [])["ok"])
+            self.assertEqual(r["cenas"][0], "Pare de perder cliente no WhatsApp")  # a janela mostra o roteiro criado
+
+    def test_pedido_ao_roteirista(self):
+        novo = conteudo.pedido_roteirista("Lumi", tema="CRM no WhatsApp", data="2026-11-23", pilar="negocio")
+        self.assertIn("roteiros/2026-11-23-<slug>.json", novo)
+        self.assertIn('"roteirista:"', novo)
+        self.assertIn("não publique", novo)
+        melhorar = conteudo.pedido_roteirista("Lumi", post="2026-11-23-pare-de-perder")
+        self.assertIn("Melhore o roteiro roteiros/2026-11-23-pare-de-perder.json", melhorar)

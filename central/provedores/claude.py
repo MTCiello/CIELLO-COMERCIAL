@@ -53,7 +53,8 @@ class PonteClaude(Provedor):
 
     def publicar(self, cred, envio):
         rede = {"instagram": "Instagram (REEL)", "tiktok": "TikTok", "youtube": "YouTube (Short)"}[envio["rede"]]
-        pedido = (f"Use o agente postagem. Agende no Metricool (na marca do conector do Metricool, fuso America/Sao_Paulo) o post {envio['post']} no {rede} "
+        pedido = (f"Use o agente postagem. Antes de tudo, confira o Metricool como manda o AGENTE.md (getBrandSettings → python central/metricool_conferir.py); "
+                  f"se o {rede} estiver desconectado, não agende e responda ERRO: {envio['rede']} desconectado no Metricool. Depois agende no Metricool (na marca do conector do Metricool, fuso America/Sao_Paulo) o post {envio['post']} no {rede} "
                   f"para {envio['quando'][:16].replace('T', ' ')}, com autoPublish true, o vídeo {envio['arquivo']} "
                   f"(siga o AGENTE.md para a URL pública do vídeo), a capa {envio.get('capa') or '(sem capa)'} e este texto:\n\n{envio.get('texto', '')}\n\n"
                   + (f"Título do YouTube: {envio.get('titulo', '')}\n" if envio["rede"] == "youtube" else "")

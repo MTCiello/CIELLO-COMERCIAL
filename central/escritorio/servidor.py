@@ -6,7 +6,7 @@ O escritório é servido pelo mesmo endereço do Ciello OS (/escritorio/): clica
 agente. Cada sessão do Claude Code aberta na pasta do assistente vira um personagem; com os hooks (o escritório
 pergunta na primeira vez), os movimentos são instantâneos.
 
-  python central/escritorio/servidor.py              # ou clique duas vezes em Ciello.cmd
+  python central/escritorio/servidor.py              # ou o ícone Ciello OS (instalador/lancador.pyw)
   python central/escritorio/servidor.py --sem-escritorio --sem-navegador
 
 Abre em http://127.0.0.1:3200 numa janela de app do Edge/Chrome (sem barra de endereço), como um programa instalado.
@@ -47,7 +47,9 @@ sys.path.insert(0, str(AQUI.parent))
 sys.path.insert(0, str(RAIZ / "instalador"))
 import status  # noqa: E402
 import atendimento  # noqa: E402
+import biblioteca  # noqa: E402
 import briefing  # noqa: E402
+import pesquisa  # noqa: E402
 import calendario  # noqa: E402
 import conexoes  # noqa: E402
 import carteira  # noqa: E402
@@ -66,6 +68,7 @@ import atualizacao  # noqa: E402
 
 import estudio_voz  # noqa: E402
 import operacao  # noqa: E402
+import perfis  # noqa: E402
 import piloto  # noqa: E402
 import plano  # noqa: E402
 import sdr  # noqa: E402
@@ -81,7 +84,8 @@ TOKEN = secrets.token_urlsafe(24)
 TELA = WEB / "escritorio"  # build da tela do escritório (escritorio/webview-ui: npx vite build)
 TIPOS = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8",
          ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".woff2": "font/woff2", ".mp4": "video/mp4",
-         ".ttf": "font/ttf", ".wav": "audio/wav", ".ico": "image/x-icon", ".json": "application/json", ".webmanifest": "application/manifest+json"}
+         ".ttf": "font/ttf", ".wav": "audio/wav", ".ico": "image/x-icon", ".json": "application/json", ".webmanifest": "application/manifest+json",
+         ".jpeg": "image/jpeg", ".webm": "audio/webm", ".ogg": "audio/ogg", ".mp3": "audio/mpeg", ".md": "text/markdown; charset=utf-8"}
 sala = None  # o escritório (nucleo.sala.Sala), criado no main
 terminais = terminal.Terminais(RAIZ)  # terminais do Claude dentro do OS (janela "Claude Code")
 atexit.register(terminais.fechar_todos)
@@ -106,12 +110,17 @@ ACOES = {
     "verificar": ("Verificação do assistente", "sistema", ["central/verificar.py", "--rapido"]),
     "piloto": ("Rodada do piloto automático", "postagem", ["central/piloto.py", "rodar"]),
     "sincronizar": ("Sincronizar as redes", "analista", ["central/social.py", "sincronizar"]),
+    "metricool_conferir": ("Conferir o Metricool", "postagem", ["central/metricool_conferir.py", "--pelo-claude"]),
+    "perfis_atualizar": ("Atualizar os perfis pelo Metricool", "analista", ["central/perfis.py", "--pelo-claude"]),
     "atualizacao_verificar": ("Procurar atualizações do Ciello OS", "sistema", ["instalador/atualizacao.py", "verificar"]),
     "atualizacao_aplicar": ("Atualizar o Ciello OS", "sistema", ["instalador/atualizacao.py", "aplicar"]),
+    "rotinas_ligar": ("Ligar as rotinas automáticas (Bom dia e piloto)", "sistema", ["instalador/rotinas.pyw", "ligar"]),
+    "rotinas_desligar": ("Desligar as rotinas automáticas", "sistema", ["instalador/rotinas.pyw", "desligar"]),
     "voz_instalar": ("Instalar a voz (Kokoro e Chatterbox, uns 3 GB)", "produtor-video", ["-m", "pip", "install", "-r", "central/requirements-voz.txt"]),
 }
 execucoes = {}
 trava = threading.Lock()
+PROCESSOS = set()  # o que executar() rodou e ainda não acabou: o Desligar fecha junto (sem deixar render ou pip órfão)
 PORTA_ATUAL = [3200]  # o login do Google/TikTok volta para esta porta
 
 
@@ -183,7 +192,7 @@ def equipe():
     agentes = []
     for p in sorted((RAIZ / ".claude" / "agents").glob("*.md")):
         cab = p.read_text(encoding="utf-8").split("---")[1]
-        campo = lambda k: (re.search(rf"^{k}:\s*(.+)$", cab, re.M) or [None, ""])[1].strip()
+        campo = lambda k: (re.search(rf"^{k}:\s*(.+)$", cab, re.M) or [None, ""])[1].strip().strip("'\"").replace("''", "'")
         agentes.append({"nome": campo("name"), "descricao": campo("description"), "cor": campo("color"),
                         "acoes": [{"id": k, "rotulo": v[0]} for k, v in ACOES.items() if v[1] == campo("name")]})
     est = status.ultimo_estado()
@@ -396,7 +405,7 @@ def salvar_empresa(dados):
 APPS = {"escritorio": app_escritorio, "conexoes": app_conexoes, "redes": app_redes, "rumo": app_rumo, "voz": estudio_voz.estado, "video": app_video, "atendimento": app_atendimento, "plano": plano.para_janela, "briefing": app_briefing, "financeiro": app_financeiro, "comercial": app_comercial,
         "conteudo": app_conteudo, "concorrentes": app_concorrentes, "tendencias": app_tendencias,
         "anuncios": lambda: {"campanhas": campanhas(), "resumo": kpis()["anuncios"]}, "atualizacoes": atualizacao.resumo_status,
-        "dados": app_dados}
+        "dados": app_dados, "perfis": perfis.listar, "biblioteca": lambda: {**biblioteca.listar(), "pesquisa": pesquisa.listar()}}
 
 
 # ---------------------------------------------------------------- execução das ações
@@ -420,11 +429,15 @@ def executar(rotulo, agente, args, acao="tarefa"):
         try:
             proc = subprocess.Popen([PY, *args], cwd=RAIZ, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                     text=True, encoding="utf-8", errors="replace", env=env)
+            with trava:
+                PROCESSOS.add(proc)
             for linha in proc.stdout:
                 with trava:
                     ex["saida"] = (ex["saida"] + linha)[-60000:]
             ex["codigo"] = proc.wait()
             proc.stdout.close()
+            with trava:
+                PROCESSOS.discard(proc)
         except OSError as e:
             ex["saida"] += f"\nNão consegui rodar: {e}"
             ex["codigo"] = -1
@@ -438,6 +451,14 @@ def executar(rotulo, agente, args, acao="tarefa"):
 # ---------------------------------------------------------------- operação sem o Claude (janelas Financeiro, Comercial, Conteúdo, Anúncios)
 
 def operar(op, dados):
+    if op == "biblioteca_mostrar":
+        return biblioteca.mostrar(str(dados.get("rel") or ""))
+    if op == "pesquisa_concorrente":
+        return pesquisa.salvar_concorrente(dados)
+    if op == "pesquisa_nicho":
+        return pesquisa.salvar_nicho(dados)
+    if op == "pesquisa_referencia":
+        return pesquisa.salvar_referencia(dados)
     if op == "voz_testar":
         try:
             args, nome = estudio_voz.args_teste(dados)
@@ -463,6 +484,15 @@ def operar(op, dados):
         itens = dados.get("itens")
         itens = itens if isinstance(itens, list) else str(itens or "").split("\n")
         return conteudo.novo_roteiro(dados.get("data"), dados.get("gancho"), itens, dados.get("cta"), str(dados.get("pilar") or "")[:40])
+    if op == "video_roteirista":
+        post, tema = str(dados.get("post") or ""), str(dados.get("tema") or "").strip()[:300]
+        if post and not (re.fullmatch(r"20\d\d-\d\d-\d\d-[\w\-]{1,80}", post) and (RAIZ / "roteiros" / f"{post}.json").exists()):
+            return {"ok": False, "saida": "roteiro não encontrado"}
+        if not post and not tema:
+            return {"ok": False, "saida": "escreva o tema do roteiro"}
+        prompt = conteudo.pedido_roteirista(empresa.perfil().get("nome") or "empresa", tema, str(dados.get("data") or "")[:10],
+                                            str(dados.get("pilar") or "")[:40], post)
+        return {"ok": True, "saida": "", "prompt": prompt}
     if op == "video_estilo":
         post, estilo, tema = str(dados.get("post") or ""), str(dados.get("estilo") or ""), str(dados.get("tema") or "").strip()[:300]
         if not estilos.achar(estilo) or not (tema or (re.fullmatch(r"20\d\d-\d\d-\d\d-[\w\-]{1,80}", post) and (RAIZ / "roteiros" / f"{post}.json").exists())):
@@ -494,6 +524,12 @@ def operar(op, dados):
         if op == "cont_legenda_salvar":
             return conteudo.salvar_legenda(post, dados.get("texto", ""))
         return conteudo.marcar_agendado(post, str(dados.get("quando") or ""), "Publicado" if dados.get("publicado") else "Agendado")
+    if op == "perfil_identidade":
+        return perfis.salvar_identidade(str(dados.get("marca") or ""), dados)
+    if op == "perfil_esteira":
+        return perfis.salvar_esteira(str(dados.get("marca") or ""), dados)
+    if op == "perfil_pedido_mes":
+        return perfis.pedido_mes(str(dados.get("marca") or ""))
     if op == "conexao_salvar":
         return conexoes.salvar_credenciais(str(dados.get("provedor")), dados)
     if op == "conexao_checar":
@@ -589,6 +625,36 @@ class Painel(BaseHTTPRequestHandler):
             return self._json({"erro": "não encontrado"}, 404)
         self._enviar(alvo.read_bytes(), TIPOS[alvo.suffix.lower()])
 
+    def _midia(self, alvo):
+        """Vídeo e áudio aos pedaços (Range): o player pula para qualquer ponto sem baixar o arquivo inteiro."""
+        if alvo is None or alvo.suffix.lower() not in TIPOS:
+            return self._json({"erro": "não encontrado"}, 404)
+        tam = alvo.stat().st_size
+        ini, fim = 0, tam - 1
+        faixa = re.match(r"bytes=(\d*)-(\d*)$", self.headers.get("Range") or "")
+        if faixa and (faixa[1] or faixa[2]):
+            if faixa[1]:
+                ini, fim = int(faixa[1]), min(int(faixa[2]) if faixa[2] else tam - 1, tam - 1)
+            else:  # bytes=-N: os últimos N
+                ini = max(tam - int(faixa[2]), 0)
+            if ini > fim or ini >= tam:
+                self.send_response(416)
+                self.send_header("Content-Range", f"bytes */{tam}")
+                return self.end_headers()
+        self.send_response(206 if faixa else 200)
+        self.send_header("Content-Type", TIPOS[alvo.suffix.lower()])
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(fim - ini + 1))
+        if faixa:
+            self.send_header("Content-Range", f"bytes {ini}-{fim}/{tam}")
+        self.end_headers()
+        with alvo.open("rb") as f:
+            f.seek(ini)
+            falta = fim - ini + 1
+            while falta > 0 and (bloco := f.read(min(1 << 20, falta))):
+                self.wfile.write(bloco)
+                falta -= len(bloco)
+
     def _tela(self, rel):
         """A tela do escritório (build de escritorio/webview-ui). Ela mesma avisa a área de trabalho do clique num
         personagem e obedece à engrenagem e ao "centralizar" (src/ciello/ na tela)."""
@@ -672,7 +738,13 @@ class Painel(BaseHTTPRequestHandler):
         if caminho.startswith("/web/"):
             return self._arquivo(WEB, caminho[5:])
         if caminho.startswith("/midia/"):
-            return self._arquivo(RAIZ / "midia", urllib.request.unquote(caminho[7:]))
+            base = (RAIZ / "midia").resolve()
+            alvo = (base / urllib.request.unquote(caminho[7:])).resolve()
+            return self._midia(alvo if alvo.is_relative_to(base) and alvo.is_file() else None)
+        if caminho.startswith("/api/biblioteca/arquivo/"):
+            return self._midia(biblioteca.caminho(urllib.request.unquote(caminho[24:])))
+        if caminho.startswith("/api/biblioteca/texto/"):
+            return self._json(biblioteca.ler(urllib.request.unquote(caminho[22:])))
         if caminho.startswith("/api/voz/arquivo/"):
             alvo = estudio_voz.arquivo(urllib.request.unquote(caminho[17:]))
             return self._enviar(alvo.read_bytes(), TIPOS[".wav"]) if alvo else self._json({"erro": "não encontrado"}, 404)
@@ -736,6 +808,13 @@ class Painel(BaseHTTPRequestHandler):
             t = terminais.abrir(prompt, str(pedido.get("titulo") or "")[:80], persistencia.preferencia("bypassPermissions"),
                                 pedido.get("modelo"))
             return self._json({"id": t.id})
+        if self.path == "/api/desligar":
+            with trava:
+                rodando = [ex["rotulo"] for ex in execucoes.values() if not ex["terminou"]]
+            if rodando and not pedido.get("forcar"):  # atualização ou render no meio: a tela pergunta de novo antes
+                return self._json({"ok": False, "rodando": rodando})
+            threading.Thread(target=desligar, daemon=True).start()
+            return self._json({"ok": True})
         if self.path == "/api/terminal/fechar":
             terminais.fechar(pedido.get("id"))
             return self._json({"ok": True})
@@ -771,6 +850,31 @@ class Painel(BaseHTTPRequestHandler):
         self._enviar(b"ok", "text/plain; charset=utf-8")
 
 
+SERVIDOR = [None]
+
+
+def encerrar_processos():
+    """Fecha o que ainda roda em segundo plano, com os filhos (git, pip, ffmpeg, node, claude)."""
+    with trava:
+        vivos = [p for p in PROCESSOS if p.poll() is None]
+    for p in vivos:
+        try:
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/PID", str(p.pid), "/T", "/F"], capture_output=True, timeout=15,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            else:
+                p.kill()
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+
+def desligar():
+    """Botão Desligar do menu Iniciar: o servidor roda sem janela, então é por aqui que ele fecha."""
+    time.sleep(0.3)  # a resposta chega à página antes
+    if SERVIDOR[0]:
+        SERVIDOR[0].shutdown()
+
+
 def abrir_como_app(url):
     """Edge ou Chrome em modo app (janela própria, sem abas nem barra de endereço); senão, o navegador padrão."""
     candidatos = [shutil.which(n) for n in ("msedge", "chrome", "google-chrome", "chromium")]
@@ -795,7 +899,7 @@ def main():
     global sala
     PORTA_ATUAL[0] = a.porta
     dados_iniciais.preparar()  # primeira abertura: a empresa fictícia de exemplo (ou nada, se já tem dados seus)
-    srv = ThreadingHTTPServer(("127.0.0.1", a.porta), Painel)
+    srv = SERVIDOR[0] = ThreadingHTTPServer(("127.0.0.1", a.porta), Painel)
     url = f"http://127.0.0.1:{a.porta}"
     print("Ciello OS em", url, "(Ctrl+C para sair)")
     if not a.sem_escritorio:
@@ -807,6 +911,9 @@ def main():
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
+    terminais.fechar_todos()
+    encerrar_processos()
+    os._exit(0)  # o escritório e os terminais têm threads próprias: desligar é desligar tudo
 
 
 if __name__ == "__main__":

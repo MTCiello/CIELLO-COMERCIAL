@@ -21,7 +21,7 @@ AREAS = {  # as salas do layout padrão (central/escritorio/gerar_layout.py); um
     "sdr": "Vendas", "closer": "Vendas", "sucesso-cliente": "Vendas",
     "financeiro": "Comercial", "gestor-anuncios": "Comercial", "caixa-entrada": "Comercial",
 }
-SALA_DAS_SESSOES = "Gerente"  # a sessão do Claude Code em que você conversa (os objetivos) senta na sala do Gerente
+SALA_DAS_SESSOES = "Gerente"  # sessão sem boneco próprio (fachada.py) aparece no Gerente; sem Gerente, senta na sala dele
 # o mesmo nome das janelas do Ciello OS (web/app.js, NOMES): o clique no personagem acha a janela por ele
 NOMES = {
     "gerente": "Gerente", "pesquisador-mercado": "Pesquisador de Mercado", "roteirista": "Roteirista",
@@ -31,6 +31,21 @@ NOMES = {
 }
 PALETAS = 6
 MATIZES = (0, 110, 220)  # sétimo agente em diante: mesmo personagem, outra cor
+
+
+def problema_no_cabecalho(cab: str) -> str:
+    """O Claude Code lê o cabeçalho como YAML e ignora o agente inteiro se ele não for válido (sem avisar).
+    O erro mais comum: valor sem aspas com ": " no meio (description: Faz X: Y). Devolve o problema ou ""."""
+    for linha in cab.strip().splitlines():
+        m = re.match(r"^([A-Za-z][\w-]*):\s*(.*)$", linha)
+        if not m:
+            return f"linha fora do formato chave: valor ({linha[:40]})"
+        valor = m.group(2).strip()
+        if valor[:1] in "'\"":
+            continue
+        if ": " in valor or valor.endswith(":") or " #" in valor or valor[:1] in "[{&*!|>%@`":
+            return f"{m.group(1)} precisa de aspas (tem ': ' ou caractere especial)"
+    return ""
 
 
 def equipe(raiz: Path) -> list[str]:

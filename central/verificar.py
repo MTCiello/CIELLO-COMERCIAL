@@ -69,7 +69,7 @@ def node():
     if maior < 20:
         return FALHA, f"Node {out}: o Remotion precisa do 20 ou mais novo"
     if not (RAIZ / "reels" / "node_modules").exists():
-        return AVISO, f"Node {out}, mas falta 'npm install' na pasta reels (o instalar.cmd faz isso)"
+        return AVISO, f"Node {out}, mas falta 'npm install' na pasta reels (Reinstalar dependências faz isso)"
     return OK, f"Node {out} e reels/node_modules"
 
 
@@ -143,7 +143,7 @@ def sdr():
         return FALHA, ultima(out)
     binario = list((RAIZ / "comercial" / "bin").glob("google*maps*scraper*")) if (RAIZ / "comercial" / "bin").exists() else []
     if not binario and not shutil.which("docker"):
-        return AVISO, ("consultas ok; falta o executável do Google Maps: rode o instalar.cmd de novo "
+        return AVISO, ("consultas ok; falta o executável do Google Maps: use Reinstalar dependências "
                        "(ou python central/sdr.py instalar-scraper)")
     return OK, f"consultas ok e scraper encontrado ({binario[0].name if binario else 'docker'})"
 
@@ -231,12 +231,16 @@ def equipe():
     """Cada agente tem nome e descrição; cada comando só chama agentes que existem; o quadro de status conhece todos."""
     sys.path.insert(0, str(RAIZ / "central"))
     import status as st
+    sys.path.insert(0, str(RAIZ / "central" / "escritorio"))
+    from nucleo.residentes import problema_no_cabecalho
     agentes = {}
     for p in sorted((RAIZ / ".claude" / "agents").glob("*.md")):
         cab = p.read_text(encoding="utf-8").split("---")[1]
         nome = re.search(r"^name:\s*(\S+)", cab, re.M)
         if not nome or not re.search(r"^description:\s*\S", cab, re.M):
             return FALHA, f"{p.name} sem name/description no cabeçalho"
+        if problema_no_cabecalho(cab):
+            return FALHA, f"{p.name}: {problema_no_cabecalho(cab)}; o Claude Code ignora esse agente"
         agentes[nome.group(1)] = p
     problemas = []
     comandos = sorted((RAIZ / ".claude" / "skills").glob("*/SKILL.md"))
@@ -278,7 +282,7 @@ def estudio_video():
     """Monta um projeto do Estúdio de Vídeo e renderiza 1 s no HyperFrames (sem narração)."""
     hf = RAIZ / "reels" / "node_modules" / ".bin" / ("hyperframes.cmd" if os.name == "nt" else "hyperframes")
     if not hf.exists():
-        return AVISO, "pulei: falta npm install em reels (o instalar.cmd faz)"
+        return AVISO, "pulei: falta npm install em reels (Reinstalar dependências faz)"
     os.environ.setdefault("HYPERFRAMES_SKIP_SKILLS", "1")
     sys.path.insert(0, str(RAIZ / "central"))
     import estudio_video as ev
@@ -308,8 +312,8 @@ def escritorio():
     if not a.personagens or not a.moveis:
         return FALHA, "sprites do escritório não carregaram (pasta assets do build)"
     if os.name == "nt" and importlib.util.find_spec("winpty") is None:
-        return AVISO, "escritório ok, mas o terminal do Claude dentro do OS precisa do pywinpty: rode o instalar.cmd de novo"
-    return OK, f"pronto no Ciello.cmd: {len(a.personagens)} personagens, {len(a.moveis['catalog'])} móveis, terminal do Claude, sem Node"
+        return AVISO, "escritório ok, mas o terminal do Claude dentro do OS precisa do pywinpty: use Reinstalar dependências"
+    return OK, f"pronto no Ciello OS: {len(a.personagens)} personagens, {len(a.moveis['catalog'])} móveis, terminal do Claude, sem Node"
 
 
 def voz():

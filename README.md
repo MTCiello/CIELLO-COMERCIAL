@@ -72,7 +72,7 @@ As janelas de Financeiro, Comercial, Conteúdo, Anúncios e os dois Estúdios **
 
 <p align="center"><img src="docs/img/escritorio.png" alt="Escritório em pixel art: sala do Gerente com porta de carvalho, Arquivos, Comercial, Copa, Área de lazer, Produtor Social, Vendas e Varanda" width="80%"></p>
 
-O fundo do Ciello OS é um escritório com uma sala para cada time (**Gerente**, **Comercial**, **Produtor Social** e **Vendas**), além de Arquivos, Copa, Área de lazer e Varanda. A sala do Gerente é fechada por uma porta de carvalho e ele não sai de lá, então você sempre sabe onde achá-lo. Esse é o layout padrão; você pode montar o seu no editor e levá-lo de um PC para outro no .zip de dados. Cada sessão do Claude Code aberta na pasta do assistente vira um personagem: ele vai até a mesa quando começa uma tarefa, digita enquanto trabalha e avisa quando precisa de você. Agentes parados vão tomar café, sentar no sofá ou pegar um ar na varanda. Clicar num personagem abre a janela daquele agente.
+O fundo do Ciello OS é um escritório com uma sala para cada time (**Gerente**, **Comercial**, **Produtor Social** e **Vendas**), além de Arquivos, Copa, Área de lazer e Varanda. A sala do Gerente é fechada por uma porta de carvalho e ele não sai de lá, então você sempre sabe onde achá-lo. Esse é o layout padrão; você pode montar o seu no editor e levá-lo de um PC para outro no .zip de dados. Cada um dos 13 agentes aparece uma vez só, e só o Gerente entra na sala dele. A sessão do Claude Code em que você conversa é o Gerente: o que ela faz (e as subtarefas que não são de nenhum agente) aparece nele, sem bonecos a mais. Quando uma tarefa vai para um agente, é ele quem vai até a mesa, digita enquanto trabalha e avisa quando precisa de você. Agentes parados vão tomar café, sentar no sofá ou pegar um ar na varanda. Clicar num personagem abre a janela daquele agente.
 
 O escritório nasceu como fork do [pixel-agents](https://github.com/pablodelucca/pixel-agents) (MIT) e hoje é servido por um núcleo próprio em Python, sem Node. Detalhes em [`escritorio/README.md`](escritorio/README.md).
 
@@ -139,11 +139,10 @@ Detalhes, canais de atualização e como publicar uma versão nova em [`docs/ins
 **Pela pasta clonada (desenvolvimento):**
 
 1. Baixe o repositório (ZIP ou `git clone`).
-2. Clique duas vezes em **`instalar.cmd`**. Ele instala o que faltar pelo `winget` (Python 3.12, Git, Node.js, ffmpeg), cria o ambiente Python e pergunta se você quer a voz (uns 3 GB).
-3. Rode **`testar.cmd`** para conferir cada função.
-4. Abra **`Ciello.cmd`**. O Ciello OS abre numa janela própria.
+2. Prepare as dependências: `powershell -ExecutionPolicy Bypass -File instalador\preparar.ps1` (acrescente `-Voz` para a voz, uns 3 GB).
+3. Abra com `.venv\Scripts\pythonw.exe instalador\lancador.pyw` (é o mesmo que o ícone do instalador abre). A verificação fica no menu Iniciar do Ciello OS.
 
-Para o Bom dia sair sozinho às 7h e o piloto da rede social rodar de hora em hora, rode `agendar.cmd` uma vez.
+Para o Bom dia sair sozinho às 7h e o piloto da rede social rodar de hora em hora: `python instalador\rotinas.pyw ligar` (ou o botão **Rodar de hora em hora** em Rede social).
 
 <details>
 <summary>Rodar em Linux ou macOS (desenvolvimento)</summary>
@@ -165,7 +164,6 @@ python central/escritorio/servidor.py            # abre em http://127.0.0.1:3200
 
 ```
 .
-├── Ciello.cmd · instalar.cmd · testar.cmd · agendar.cmd   atalhos do Windows
 ├── instalador/              instalador do Windows (CielloOS-Setup.exe), ícone e atualizações · VERSION
 ├── central/                 o programa em Python
 │   ├── escritorio/          Ciello OS: servidor, tela (web/) e núcleo do escritório (nucleo/)

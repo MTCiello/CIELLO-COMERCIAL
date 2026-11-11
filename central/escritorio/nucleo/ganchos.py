@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sys
 import time
@@ -99,6 +100,29 @@ def instalados(caminho=None):
                 if isinstance(h, dict) and _nosso(h.get("command")):
                     return True
     return False
+
+
+def de_outra_pasta(caminho=None):
+    """Nossos hooks apontam para outra instalação (pasta apagada, movida ou reinstalada em outro disco)?
+    Aí cada ferramenta do Claude Code mostra "No such file or directory" e o escritório não recebe os eventos."""
+    try:
+        dados = _ler_config(caminho or CONFIG_CLAUDE)
+    except (OSError, ValueError):
+        return False
+    atual = _comando()
+    for entradas in (dados.get("hooks") or {}).values():
+        for e in entradas if isinstance(entradas, list) else []:
+            for h in (e.get("hooks") or []) if isinstance(e, dict) else []:
+                if isinstance(h, dict) and _nosso(h.get("command")) and h.get("command") != atual and not _de_pe(h["command"]):
+                    return True
+    return False
+
+
+def _de_pe(cmd):
+    """O Python e o gancho.py do comando ainda existem? Então é outra instalação viva (um clone de desenvolvimento,
+    por exemplo) e não mexemos: senão as duas ficariam trocando os hooks uma da outra a cada início."""
+    partes = re.findall(r'"([^"]+)"', cmd)
+    return len(partes) >= 2 and all(Path(x).exists() for x in partes[:2])
 
 
 def instalar(caminho=None):

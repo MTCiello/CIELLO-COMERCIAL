@@ -36,13 +36,13 @@ Para testar o fluxo sem baixar nenhum modelo, use `--motor teste` no passo 1 (to
 
 ## Instalação no Windows (PC com AMD de 8 GB)
 
-Clique duas vezes em `instalar.cmd` na raiz do repositório e depois em `testar.cmd`. Passo a passo em `docs/instalador.md`.
+Baixe e rode o `CielloOS-Setup-<versão>.exe` (um instalador só, sem janelas de CMD). Passo a passo em `docs/instalador.md`.
 
 - **Base** (`central/requirements.txt`): numpy e soundfile. É rápida.
 - **Voz** (`central/requirements-voz.txt`): Kokoro, Chatterbox e faster-whisper. São ~3 GB; o instalador pergunta.
 - **Por que CPU:** o PyTorch para placas AMD no Windows ainda é experimental. A CPU gera ~25 s de narração em poucos minutos.
 - **Modelos:** cada motor de voz baixa o seu na primeira execução (Kokoro ~300 MB, Chatterbox ~2 GB, Whisper small ~500 MB).
-- **Verificação:** `python central/verificar.py` (ou `testar.cmd`) roda cada função e grava `estado/verificacao.txt`.
+- **Verificação:** `python central/verificar.py` (ou Verificação do assistente, no Ciello OS) roda cada função e grava `estado/verificacao.txt`.
 
 ## Clonar a voz do usuário (Chatterbox)
 

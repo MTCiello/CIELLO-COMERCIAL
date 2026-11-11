@@ -4,7 +4,7 @@ Bateria rodada na nuvem antes do teste no PC do usuário. Mostra o que passou, o
 
 ## 1. Resultado da bateria
 
-`python central/verificar.py` (é o mesmo `testar.cmd` do Windows): **16 ok · 3 avisos · 0 falhas**.
+`python central/verificar.py` (é a mesma Verificação do assistente do Ciello OS): **16 ok · 3 avisos · 0 falhas**.
 
 | Verificação | Resultado | O que prova |
 |---|---|---|
@@ -70,7 +70,7 @@ Todos os 10 cartões repetem o mesmo modelo: o que faz, quando roda, com o que s
 
 | # | Agente do reel | O que o assistente já tinha | O que foi feito agora | Fica para depois |
 |---|---|---|---|---|
-| 1 | **Chefe de Gabinete:** resumo de CEO, delega, cobra pendências, placar; todo dia 7h + sexta | coordenador e comandos, sem resumo diário | agente `chefe-gabinete` + `central/briefing.py` (3 prioridades, pendências com dono, placar) + `/bom-dia`, `/sexta` + `agendar.cmd` (7h no Windows) + prioridades no painel | — |
+| 1 | **Chefe de Gabinete:** resumo de CEO, delega, cobra pendências, placar; todo dia 7h + sexta | coordenador e comandos, sem resumo diário | agente `chefe-gabinete` + `central/briefing.py` (3 prioridades, pendências com dono, placar) + `/bom-dia`, `/sexta` + `instalador/rotinas.pyw` (7h no Windows) + prioridades no painel | — |
 | 2 | **Marketing:** posts, vídeo curto, agenda, métricas | **completo** (pesquisador, roteirista, produtores, postagem, analista) | — | cortar vídeo longo em reels (dá para fazer com o faster-whisper que já está no projeto, quando houver vídeo longo) |
 | 3 | **Vendas:** responde em minutos, qualifica, marca call, follow-up | SDR (ativo) + closer, sem lead que chega sozinho | `sdr.py entrada`: registra o lead da DM, do anúncio, do site ou da indicação e devolve a resposta com 3 perguntas de qualificação; closer marca a demo pelo caixa-entrada | resposta automática 24h: exige a API oficial do WhatsApp (paga) e um servidor ligado |
 | 4 | **Suporte:** FAQ, pedidos simples, todo canal, caso difícil | nada | agente `sucesso-cliente` + `comercial/faq.md` (você aprova, a resposta entra no FAQ) | atendimento automático: mesmo motivo do item 3 |
@@ -87,7 +87,7 @@ Todos os 10 cartões repetem o mesmo modelo: o que faz, quando roda, com o que s
 
 ## 6. O que testar
 
-- [ ] `testar.cmd` terminou com 0 falhas. Os avisos de radar e vigia devem **sumir** no PC: se a vigia disser que uma URL está fora do ar, troque a URL em `comercial/concorrentes.json`.
+- [ ] A Verificação do assistente terminou com 0 falhas. Os avisos de radar e vigia devem **sumir** no PC: se a vigia disser que uma URL está fora do ar, troque a URL em `comercial/concorrentes.json`.
 - [ ] `/bom-dia` no Claude Code: saiu uma tela com as 3 prioridades?
 - [ ] Cadastre um cliente de verdade (ou de teste) e baixe o extrato do banco em **OFX**: `python central/financeiro.py cliente ...` → `faturar` → `importar extrato.ofx` → `resumo`. As despesas caíram na categoria certa?
-- [ ] `agendar.cmd` (opcional): amanhã às 7h deve aparecer `estado\briefing\2026-10-20.md`.
+- [ ] Rotinas automáticas (opcional): amanhã às 7h deve aparecer `estado\briefing\2026-10-20.md`.

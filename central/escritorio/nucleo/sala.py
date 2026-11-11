@@ -16,6 +16,7 @@ from . import ganchos as G
 from . import persistencia as P
 from .agentes import LEITURA, PALETAS, SUBAGENTE, Laco, Loja, limpar
 from .ativos import Ativos
+from .fachada import Fachada
 from .ganchos import Ganchos
 from .residentes import Residentes
 from .vigia import Vigia, pasta_de_sessoes
@@ -38,11 +39,20 @@ class Sala:
         self.residentes.carregar(projeto)
         self.vigia.leitor.residentes = self.vigia.sombra.residentes = self.ganchos.residentes = self.residentes
         self.vigia.residentes = self.residentes
+        # a tela vê só os agentes da casa: a sessão em que você conversa e os ajudantes sem dono aparecem no Gerente
+        self.fachada = Fachada(lambda: self.residentes.ids.get("gerente"),
+                               lambda aid: aid in self.residentes.ids.values())
+        self.loja.filtro = self.fachada.traduzir
         self.token_gancho = secrets.token_urlsafe(24)
 
     # ---------------------------------------------------------- ciclo de vida
     def iniciar(self):
         cfg = P.config()
+        if cfg["hooks"] is True and G.de_outra_pasta():  # você já disse sim: só aponta para esta instalação
+            try:
+                G.instalar()
+            except (OSError, ValueError) as e:
+                print(f"[escritório] não deu para atualizar os hooks: {e}")
         self.vigia.ganchos_ligados = cfg["hooks"] is True and G.instalados()
         self.vigia.ver_todas = bool(cfg["preferencias"]["watchAllSessions"])
         self._anotar_servidor()
@@ -225,7 +235,10 @@ class Sala:
         lugares = P.estado()["lugares"]
         fixos = (layout or {}).get("lugaresFixos") or {}  # a poltrona do Gerente já nasce dele (gerar_layout.py)
         ids, meta, nomes, externos = [], {}, {}, {}
+        visiveis = set(self.fachada.visiveis([aid for aid, _ in self.loja]))
         for aid, a in self.loja:
+            if aid not in visiveis:
+                continue
             ids.append(aid)
             if a.pasta_nome:
                 nomes[aid] = a.pasta_nome
@@ -242,7 +255,8 @@ class Sala:
             enviar({"type": "hooksConsentRequest", "providerId": "claude", "headline": G.TITULO_CONSENTIMENTO,
                     "disclosure": G.TEXTO_CONSENTIMENTO})
 
-    def _reenviar_atividade(self, enviar):
+    def _reenviar_atividade(self, enviar_direto):
+        enviar = lambda m: [enviar_direto(x) for x in self.fachada.traduzir(limpar(m))]
         for aid, a in self.loja:
             if a.equipe or a.nome or a.lider:
                 enviar(a.info_equipe(teamUsesTmux=a.equipe_tmux))
