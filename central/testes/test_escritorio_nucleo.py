@@ -223,6 +223,77 @@ class TesteResidentes(Montagem):
         self.assertTrue(self.loja.get(self.res.ids["closer"]).esperando)
 
 
+class TesteFachada(Montagem):
+    """Na tela só existem os agentes da casa: a sessão e os ajudantes sem dono aparecem no Gerente, nunca como boneco."""
+
+    def setUp(self):
+        super().setUp()
+        from nucleo.fachada import Fachada
+        from nucleo.residentes import Residentes
+        agentes = self.dir / "raiz" / ".claude" / "agents"
+        agentes.mkdir(parents=True)
+        for nome in ("gerente", "sdr"):
+            (agentes / f"{nome}.md").write_text(f"---\nname: {nome}\ndescription: x\n---\ncorpo\n", encoding="utf-8")
+        self.res = Residentes(self.loja, self.vigia.rel)
+        self.res.carregar(self.dir / "raiz")
+        self.vigia.leitor.residentes = self.vigia.sombra.residentes = self.vigia.residentes = self.res
+        self.fachada = Fachada(lambda: self.res.ids.get("gerente"), lambda aid: aid in self.res.ids.values())
+        self.loja.filtro = self.fachada.traduzir
+        self.gerente, self.sdr = self.res.ids["gerente"], self.res.ids["sdr"]
+        self.msgs.clear()
+
+    def test_sessao_e_subtarefas_sem_dono_aparecem_no_gerente_sem_boneco_novo(self):
+        self.vigia.acompanhar(self.projeto)
+        arq = self.sessao()
+        self.escrever(arq, {"type": "user", "message": {"content": "oi"}})
+        self.vigia.varrer_pasta(str(self.projeto))
+        sessao = max(i for i, a in self.loja if not a.residente)
+        self.escrever(arq, {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "t1", "name": "Task", "input": {"description": "resumo", "subagent_type": "general-purpose"}},
+            {"type": "tool_use", "id": "t2", "name": "Task", "input": {"description": "follow-ups", "subagent_type": "sdr"}}]}},
+            {"type": "progress", "parentToolUseID": "t1", "data": {"message": {"type": "assistant", "message": {
+                "content": [{"type": "tool_use", "id": "s1", "name": "Read", "input": {"file_path": "a.md"}}]}}}})
+        self.ler(sessao)
+        self.assertFalse([m for m in self.msgs if m.get("id") == sessao])         # a sessão não aparece na tela
+        self.assertFalse([m for m in self.msgs if m["type"] == "agentCreated"])   # nenhum boneco novo
+        self.assertFalse([m for m in self.msgs if m["type"].startswith("subagent")])  # nenhum ajudante ao lado
+        self.assertIn({"type": "agentToolStart", "id": self.gerente, "toolId": "t1", "status": "Subtask: resumo", "toolName": ""}, self.msgs)
+        self.assertIn({"type": "agentToolStart", "id": self.gerente, "toolId": "s1", "status": "Reading a.md", "toolName": ""}, self.msgs)
+        self.assertIn({"type": "agentToolStart", "id": self.sdr, "toolId": "t2", "status": "follow-ups", "toolName": ""}, self.msgs)
+        self.assertIn({"type": "agentStatus", "id": self.gerente, "status": "active"}, self.msgs)
+        self.msgs.clear()
+        self.escrever(arq, {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "t1"},
+                                                                    {"type": "tool_result", "tool_use_id": "t2"}]}},
+                      {"type": "system", "subtype": "turn_duration"})
+        self.ler(sessao)
+        vencer(self.laco)
+        self.assertFalse([m for m in self.msgs if m.get("id") == sessao])
+        self.assertIn({"type": "agentStatus", "id": self.gerente, "status": "waiting", "awaitingInput": False}, self.msgs)
+        self.assertIn({"type": "agentStatus", "id": self.sdr, "status": "waiting", "awaitingInput": False}, self.msgs)
+
+    def test_gerente_so_volta_para_a_rotina_quando_todas_as_sessoes_param(self):
+        f, g = self.fachada, self.gerente
+        f.traduzir({"type": "agentStatus", "id": 1, "status": "active"})
+        f.traduzir({"type": "agentStatus", "id": 2, "status": "active"})
+        f.traduzir({"type": "agentToolStart", "id": 1, "toolId": "a", "status": "Reading x", "toolName": "Read"})
+        self.assertEqual(f.traduzir({"type": "agentStatus", "id": 1, "status": "waiting"}),
+                         [{"type": "agentToolDone", "id": g, "toolId": "a"}])  # a sessão 2 ainda trabalha
+        self.assertEqual(f.traduzir({"type": "agentStatus", "id": 2, "status": "waiting"}),
+                         [{"type": "agentStatus", "id": g, "status": "waiting"}])
+        f.traduzir({"type": "agentStatus", "id": 3, "status": "active"})
+        self.assertEqual(f.traduzir({"type": "agentClosed", "id": 3}),
+                         [{"type": "agentStatus", "id": g, "status": "waiting", "silencioso": True}])
+        self.assertEqual(f.traduzir({"type": "agentCreated", "id": 4}), [])
+        self.assertEqual(f.visiveis([1, g, self.sdr]), [g, self.sdr])
+
+    def test_sem_gerente_tudo_passa_como_antes(self):
+        from nucleo.fachada import Fachada
+        f = Fachada(lambda: None, lambda aid: False)
+        msg = {"type": "subagentToolStart", "id": 1, "parentToolId": "t", "toolId": "s", "status": "x"}
+        self.assertEqual(f.traduzir(msg), [msg])
+        self.assertEqual(f.visiveis([1, 2]), [1, 2])
+
+
 class TesteGanchos(Montagem):
     def test_sessao_confirmada_pelo_hook_vira_agente_e_para_de_adivinhar(self):
         g = G.Ganchos(self.vigia)
